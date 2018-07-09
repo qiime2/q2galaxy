@@ -5,11 +5,12 @@ def action_runner(plugin_id, action_id, inputs):
     plugin = pm.plugins[plugin_id.replace('-', '_')]
     action = plugin.actions[action_id]
 
-    inputs = {k: sdk.Artifact.load(v) for k, v in inputs.items()}
+    inputs = {k: sdk.Artifact.load(v) for k, v in inputs.items()
+              if v is not None}
 
     results = action(**inputs)
 
-    for name, result in zip(result._fields, result):
+    for name, result in zip(results._fields, results):
         result.save(name)
 
 def get_version(plugin_id):

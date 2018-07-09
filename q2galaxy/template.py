@@ -47,16 +47,16 @@ def write_tool(directory, plugin_id, action_id):
 
 def make_config():
     configfiles = XMLNode('configfiles')
-    configfiles.append(XMLNode('inputs', filename='inputs.json', name='inputs'))
+    configfiles.append(XMLNode('inputs', name='inputs', data_style='paths'))
     return configfiles
 
 
 
 def make_tool(plugin_id, action, version):
-    tool = XMLNode('tool', id=get_tool_id(action), name=action.id,
+    tool = XMLNode('tool', id=get_tool_id(action),
+                   name=make_tool_name(plugin_id, action.id),
                    version=version)
 
-    configfiles = XMLNode('configfiles')
     inputs = XMLNode('inputs')
     outputs = XMLNode('outputs')
 
@@ -82,19 +82,16 @@ def make_tool(plugin_id, action, version):
     signature = action.signature
 
     for name, spec in signature.inputs.items():
-        param, config = make_input_param(name, spec)
+        param = make_input_param(name, spec)
         inputs.append(param)
-        configfiles.append(config)
 
     for name, spec in signature.parameters.items():
-        #param, config = make_parameter_param(name, spec)
+        #param = make_parameter_param(name, spec)
         #inputs.append(param)
-        #configfiles.append(config)
         pass
 
     for name, spec in signature.outputs.items():
-        output, config = make_output(name, spec)
-        configfiles.append(config)
+        output = make_output(name, spec)
         outputs.append(output)
 
 
@@ -103,7 +100,6 @@ def make_tool(plugin_id, action, version):
 
 def make_input_param(name, spec):
     param = XMLNode('param', type='data', format='qza', name=name)
-    config = XMLNode('inputs', name=name, filename=INPUT_FILE)
     options = XMLNode(
         'options', options_filter_attribute='metadata.semantic_type')
     param.append(options)
@@ -116,7 +112,7 @@ def make_input_param(name, spec):
     for t in spec.qiime_type:
         options.append(XMLNode('filter', type='add_value', value=repr(t)))
 
-    return param, config
+    return param
 
 
 def make_parameter_param(name, spec):
@@ -129,15 +125,14 @@ def make_output(name, spec):
     else:
         format_ = 'qza'
 
-    output = XMLNode('data', format=format_, name=name)
-    config = XMLNode('inputs', name=name, filename=OUTPUT_FILE)
+    output = XMLNode('data', format=format_, name=name, from_work_dir='.'.join([name, format_]))
 
-    return output, config
+    return output
 
 
 def make_command(plugin_id, action_id):
     command = XMLNode('command')
-    command.text = ('q2galaxy run {plugin_id} {action_id} {INPUT_FILE}'
+    command.text = ("q2galaxy run {plugin_id} {action_id} '$inputs'"
                     ).format(plugin_id=plugin_id,
                                              action_id=action_id,
                                              INPUT_FILE=INPUT_FILE)
@@ -153,3 +148,7 @@ def make_version_command(plugin_id):
 def make_citations(citations):
     # TODO: split our BibTeX up into single entries
     pass
+
+
+def make_tool_name(plugin_id, action_id):
+    return plugin_id.replace('_', '-') + ' ' + action_id.replace('_', '-')

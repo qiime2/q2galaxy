@@ -42,7 +42,6 @@ def tests():
 def run(plugin, action, inputs):
     with open(inputs, 'r') as fh:
         config = json.load(fh)
-        print(config)
     action_runner(plugin, action, config)
 
 
