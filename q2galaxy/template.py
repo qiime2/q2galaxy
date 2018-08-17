@@ -55,7 +55,8 @@ def make_config():
 def make_tool(plugin_id, action, version):
     tool = XMLNode('tool', id=get_tool_id(action),
                    name=make_tool_name(plugin_id, action.id),
-                   version=version)
+                   version=version,
+                   profile='18.09')
 
     inputs = XMLNode('inputs')
     outputs = XMLNode('outputs')
