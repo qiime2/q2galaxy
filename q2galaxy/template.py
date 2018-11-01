@@ -13,12 +13,14 @@ OUTPUT_FILE = 'outputs.json'
 def XMLNode(name_, **attrs):
     return xml.Element(name_, attrs)
 
+
 def _hack_requirements():
     requirements = XMLNode('requirements')
     requirement = XMLNode('requirement', type='package', version='2018.6.0')
     requirement.text = 'qiime2'
     requirements.append(requirement)
     return requirements
+
 
 def get_tool_id(action):
     return action.get_import_path().replace('.', '_')
@@ -49,7 +51,6 @@ def make_config():
     configfiles = XMLNode('configfiles')
     configfiles.append(XMLNode('inputs', name='inputs', data_style='paths'))
     return configfiles
-
 
 
 def make_tool(plugin_id, action, version):
@@ -87,14 +88,13 @@ def make_tool(plugin_id, action, version):
         inputs.append(param)
 
     for name, spec in signature.parameters.items():
-        #param = make_parameter_param(name, spec)
-        #inputs.append(param)
+        # param = make_parameter_param(name, spec)
+        # inputs.append(param)
         pass
 
     for name, spec in signature.outputs.items():
         output = make_output(name, spec)
         outputs.append(output)
-
 
     return tool
 
@@ -126,7 +126,9 @@ def make_output(name, spec):
     else:
         format_ = 'qza'
 
-    output = XMLNode('data', format=format_, name=name, from_work_dir='.'.join([name, format_]))
+    output = XMLNode(
+        'data', format=format_, name=name,
+        from_work_dir='.'.join([name, format_]))
 
     return output
 
@@ -135,8 +137,8 @@ def make_command(plugin_id, action_id):
     command = XMLNode('command')
     command.text = ("q2galaxy run {plugin_id} {action_id} '$inputs'"
                     ).format(plugin_id=plugin_id,
-                                             action_id=action_id,
-                                             INPUT_FILE=INPUT_FILE)
+                             action_id=action_id,
+                             INPUT_FILE=INPUT_FILE)
     return command
 
 

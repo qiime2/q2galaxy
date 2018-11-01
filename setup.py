@@ -7,4 +7,3 @@ setup(
     packages=find_packages(),
     entry_points={
         'console_scripts': ['q2galaxy=q2galaxy:root']})
-

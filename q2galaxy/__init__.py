@@ -49,5 +49,3 @@ def run(plugin, action, inputs):
 @click.argument('plugin', type=str)
 def version(plugin):
     print('%s version %s' % (plugin, get_version(plugin)))
-
-
