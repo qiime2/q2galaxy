@@ -15,7 +15,7 @@ def XMLNode(name_, **attrs):
 
 def _hack_requirements():
     requirements = XMLNode('requirements')
-    requirement = XMLNode('requirement', type='package', version='2018.6.0')
+    requirement = XMLNode('requirement', type='package', version='2018.11.0')
     requirement.text = 'qiime2'
     requirements.append(requirement)
     return requirements
