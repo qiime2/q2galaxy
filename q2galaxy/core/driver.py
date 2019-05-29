@@ -3,7 +3,7 @@ import qiime2.sdk as sdk
 
 def action_runner(plugin_id, action_id, inputs):
     pm = sdk.PluginManager()
-    plugin = pm.plugins[plugin_id.replace('_', '-')]
+    plugin = pm.get_plugin(id=plugin_id)
     action = plugin.actions[action_id]
 
     inputs = {k: sdk.Artifact.load(v) for k, v in inputs.items()
@@ -17,5 +17,5 @@ def action_runner(plugin_id, action_id, inputs):
 
 def get_version(plugin_id):
     pm = sdk.PluginManager()
-    plugin = pm.plugins[plugin_id.replace('_', '-')]
+    plugin = pm.get_plugin(id=plugin_id)
     return plugin.version
