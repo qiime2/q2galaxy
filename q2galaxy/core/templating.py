@@ -2,11 +2,23 @@ import xml.etree.ElementTree as xml
 import xml.dom.minidom as dom
 
 import qiime2.sdk as sdk
+from qiime2.core.type.grammar import UnionExp
+from qiime2.core.type.primitive import Choices
 
 import q2galaxy
 
 INPUT_FILE = 'inputs.json'
 OUTPUT_FILE = 'outputs.json'
+
+qiime_type_to_param_type = {
+    'Int': 'integer',
+    'Str': 'text',
+    'Bool': 'boolean',
+    'Float': 'float',
+    'Metadata': 'data',
+    'MetadataColumn': 'data',
+    'List': 'data'
+}
 
 
 def XMLNode(name_, _text=None, **attrs):
@@ -24,8 +36,9 @@ def make_tool(conda_meta, plugin, action):
         param = make_input_param(name, spec)
         inputs.append(param)
     for name, spec in signature.parameters.items():
-        param = make_parameter_param(name, spec)
+        params = make_parameter_param(name, spec)
         # TODO: inputs.append(param)
+        inputs.extend(params)
 
     outputs = XMLNode('outputs')
     for name, spec in signature.outputs.items():
@@ -66,7 +79,50 @@ def make_input_param(name, spec):
 
 def make_parameter_param(name, spec):
     # TODO: implement this
-    pass
+    if isinstance(spec.qiime_type, UnionExp):
+        qiime_types = spec.qiime_type.unpack_union()
+    else:
+        qiime_types = (spec.qiime_type,)
+
+    params = []
+    for qiime_type in qiime_types:
+        XML_attrs = {}
+        option_tags = []
+
+        if qiime_type.predicate is not None:
+            if qiime_type.predicate.name == 'Choices':
+                choices = qiime_type.predicate.to_ast()['choices']
+                XML_attrs['type'] = 'select'
+
+                for choice in choices:
+                    option_tags.append(XMLNode('option', value=choice))
+
+            elif qiime_type.predicate.name == 'Range':
+                range_ = qiime_type.predicate.to_ast()['range']
+                XML_attrs['type'] = qiime_type_to_param_type[qiime_type.name]
+
+                if range_[0] is not None:
+                    XML_attrs['min'] = str(range_[0])
+
+                if range_[1] is not None:
+                    XML_attrs['max'] = str(range_[1])
+        else:
+            XML_attrs['type'] = qiime_type_to_param_type[qiime_type.name]
+
+        if str(spec.default) != 'NOVALUE' and str(spec.default) != "None":
+            XML_attrs['value'] = str(spec.default)
+
+        if str(spec.description) != 'NOVALUE' and \
+                str(spec.description) != "None":
+            XML_attrs['label'] = str(spec.description)
+
+        param = XMLNode('param', name=name, **XML_attrs)
+        for option in option_tags:
+            param.append(option)
+
+        params.append(param)
+
+    return params
 
 
 def make_output(name, spec):
