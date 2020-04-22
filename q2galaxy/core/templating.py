@@ -17,7 +17,8 @@ qiime_type_to_param_type = {
     'Float': 'float',
     'Metadata': 'data',
     'MetadataColumn': 'data',
-    'List': 'data'
+    'List': 'data',
+    'Set': 'data',
 }
 
 
@@ -78,6 +79,7 @@ def make_input_param(name, spec):
 
 
 def make_parameter_param(name, spec):
+    print(spec)
     # TODO: implement this
     if isinstance(spec.qiime_type, UnionExp):
         qiime_types = spec.qiime_type.unpack_union()
@@ -91,11 +93,12 @@ def make_parameter_param(name, spec):
 
         if qiime_type.predicate is not None:
             if qiime_type.predicate.name == 'Choices':
+                print('\nCHOICE\n')
                 choices = qiime_type.predicate.to_ast()['choices']
                 XML_attrs['type'] = 'select'
 
                 for choice in choices:
-                    option_tags.append(XMLNode('option', value=choice))
+                    option_tags.append(XMLNode('option', value=str(choice)))
 
             elif qiime_type.predicate.name == 'Range':
                 range_ = qiime_type.predicate.to_ast()['range']
