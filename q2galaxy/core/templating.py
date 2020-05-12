@@ -3,6 +3,7 @@ import xml.dom.minidom as dom
 
 import qiime2.sdk as sdk
 from qiime2.core.type.grammar import UnionExp
+from qiime2.core.type.meta import TypeVarExp
 from qiime2.core.type.primitive import Choices
 
 import q2galaxy
@@ -79,12 +80,16 @@ def make_input_param(name, spec):
 
 
 def make_parameter_param(name, spec):
-    print(spec)
     # TODO: implement this
-    if isinstance(spec.qiime_type, UnionExp):
-        qiime_types = spec.qiime_type.unpack_union()
+    if isinstance(spec.qiime_type, TypeVarExp):
+        qiime_types = list(spec.qiime_type.members)
     else:
-        qiime_types = (spec.qiime_type,)
+        qiime_types = [spec.qiime_type]
+
+    for qiime_type in qiime_types:
+        if isinstance(qiime_type, UnionExp):
+            qiime_types.remove(qiime_type)
+            qiime_types.extend(qiime_type.unpack_union())
 
     params = []
     for qiime_type in qiime_types:
@@ -93,7 +98,6 @@ def make_parameter_param(name, spec):
 
         if qiime_type.predicate is not None:
             if qiime_type.predicate.name == 'Choices':
-                print('\nCHOICE\n')
                 choices = qiime_type.predicate.to_ast()['choices']
                 XML_attrs['type'] = 'select'
 
