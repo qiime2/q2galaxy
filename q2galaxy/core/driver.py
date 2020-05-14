@@ -8,8 +8,9 @@ def action_runner(plugin_id, action_id, inputs):
     plugin = pm.get_plugin(id=plugin_id)
     action = plugin.actions[action_id]
 
-    # This is sloppy and should probably be handled higher up by passing inputs
-    # and params to this function as seperate entities in the first place
+    # TODO: This is sloppy and should probably be handled higher up by passing
+    # inputs and params to this function as seperate entities in the first
+    # place
     params = {}
     to_remove = []
     for name, input_ in inputs.items():

@@ -56,6 +56,8 @@ def tests(output):
     pass
 
 
+# TODO: Somewhere in q2galaxy (maybe here) we need to be able to extract
+# metadata from artifacts when necessary
 @root.command()
 @click.argument('plugin', type=str)
 @click.argument('action', type=str)

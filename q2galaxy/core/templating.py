@@ -16,7 +16,10 @@ qiime_type_to_param_type = {
     'Str': 'text',
     'Bool': 'boolean',
     'Float': 'float',
+    # TODO: Look at what galaxy's internal concept of tabular data is and apply
+    # it to metadata
     'Metadata': 'data',
+    # TODO: Look at what galaxy's internal concept of multiple inputs is
     'MetadataColumn': 'data',
     'List': 'data',
     'Set': 'data',
@@ -39,7 +42,6 @@ def make_tool(conda_meta, plugin, action):
         inputs.append(param)
     for name, spec in signature.parameters.items():
         params = make_parameter_param(name, spec)
-        # TODO: inputs.append(param)
         inputs.extend(params)
 
     outputs = XMLNode('outputs')
@@ -62,6 +64,7 @@ def make_tool(conda_meta, plugin, action):
     return tool
 
 
+# TODO: Needs to be able to account for a list of inputs
 def make_input_param(name, spec):
     param = XMLNode('param', type='data', format='qza', name=name)
     options = XMLNode(
@@ -79,8 +82,9 @@ def make_input_param(name, spec):
     return param
 
 
+# TODO: List and Set parameters are likely broken right now (could be cause or
+# part of cause of xmls failing to render)
 def make_parameter_param(name, spec):
-    # TODO: implement this
     if isinstance(spec.qiime_type, TypeVarExp):
         qiime_types = list(spec.qiime_type.members)
     else:
