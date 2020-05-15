@@ -120,7 +120,11 @@ def make_parameter_param(name, spec):
         else:
             XML_attrs['type'] = qiime_type_to_param_type[qiime_type.name]
 
-        if str(spec.default) != 'NOVALUE' and str(spec.default) != "None":
+        if (qiime_type.name != 'Str' and spec.default == 'auto') \
+                or str(spec.default) == 'NOVALUE' \
+                or str(spec.default) == 'None':
+            XML_attrs['optional'] = 'true'
+        else:
             XML_attrs['value'] = str(spec.default)
 
         if str(spec.description) != 'NOVALUE' and \
