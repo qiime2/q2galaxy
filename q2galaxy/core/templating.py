@@ -17,7 +17,9 @@ qiime_type_to_param_type = {
     'Bool': 'boolean',
     'Float': 'float',
     # TODO: Look at what galaxy's internal concept of tabular data is and apply
-    # it to metadata
+    # it to metadata. . . Does this actually need to happen? We always seem to
+    # read metadata from a file, so can't we just always take the filepath and
+    # let the framework handle everything table related
     'Metadata': 'data',
     # TODO: Look at what galaxy's internal concept of multiple inputs is
     'MetadataColumn': 'data',
