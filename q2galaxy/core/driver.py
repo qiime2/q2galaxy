@@ -25,8 +25,11 @@ def action_runner(plugin_id, action_id, inputs):
 
     metadata_inputs = {}
     to_remove = []
+    all_inputs_params = {}
+    all_inputs_params.update(action.signature.parameters)
+    all_inputs_params.update(action.signature.inputs)
     for key, value in inputs.items():
-        type_ = action.signature.parameters[key].qiime_type
+        type_ = all_inputs_params[key].qiime_type
         if type_ == Metadata or type_ == MetadataColumn:
             metadata_inputs[key] = _convert_metadata(type_, inputs[key])
             to_remove.append(key)

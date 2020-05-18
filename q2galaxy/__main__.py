@@ -64,6 +64,19 @@ def tests(output):
 def run(plugin, action, inputs):
     with open(inputs, 'r') as fh:
         config = json.load(fh)
+    # TODO: Something to do with jsonizing strings kinda butchers them. For
+    # instance, the where clause from filter-table filter-samples in moving
+    # pictures goes from
+    # "[body-site]='gut'"
+    # to
+    # __dq____ob__body-site__cb__=__sq__gut__sq____dq__.
+    # This obviously needs to be undone at some point for the  query to
+    # actually work. This is probably not the way to do it. I don't know much
+    # about json, but I can probably find a cleaner way to undo this
+    for key, value in config.items():
+        if type(value) == str:
+            config[key] = value.replace('__sq__', "'").replace('__dq__', '"') \
+                .replace('__ob__', '[').replace('__cb__', ']')
     action_runner(plugin, action, config)
 
 
