@@ -82,8 +82,7 @@ def make_input_param(name, spec):
     return param
 
 
-# TODO: List and Set parameters are likely broken right now (could be cause or
-# part of cause of xmls failing to render)
+# TODO: List and Set parameters are likely broken right now
 def make_parameter_param(name, spec):
     if isinstance(spec.qiime_type, TypeVarExp):
         qiime_types = list(spec.qiime_type.members)
