@@ -67,6 +67,10 @@ def make_tool(conda_meta, plugin, action):
 
 
 # TODO: Needs to be able to account for a list of inputs
+# Current progress: Can manually edit xml to take a 'data_collection list'.
+# Can then create a list in galaxy using one or more already imported FeatureTable[Frequency] artifacts.
+# Attempting to use the produced list for built-in collection operations succeeds.
+# Attempting to use the list in feature-table merge results in unspecified error from galaxy
 def make_input_param(name, spec):
     param = XMLNode('param', type='data', format='qza', name=name)
     options = XMLNode(
