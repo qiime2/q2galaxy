@@ -117,6 +117,9 @@ def make_parameter_param(name, spec):
                 range_ = qiime_type.predicate.to_ast()['range']
                 XML_attrs['type'] = qiime_type_to_param_type[qiime_type.name]
 
+                if qiime_type.name == 'List' or qiime_type.name == 'Set':
+                    XML_attrs['multiple'] = 'true'
+
                 if range_[0] is not None:
                     XML_attrs['min'] = str(range_[0])
 
