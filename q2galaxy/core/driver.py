@@ -1,5 +1,3 @@
-import os
-
 import qiime2
 from qiime2.plugin import Metadata, MetadataColumn
 import qiime2.sdk as sdk
@@ -10,39 +8,36 @@ def action_runner(plugin_id, action_id, inputs):
     plugin = pm.get_plugin(id=plugin_id)
     action = plugin.actions[action_id]
 
-    # TODO: This is sloppy and should probably be handled higher up by passing
-    # inputs and params to this function as seperate entities in the first
-    # place
-    params = {}
-    to_remove = []
-    for name, input_ in inputs.items():
-        if not os.path.exists(str(input_)):
-            params[name] = input_
-            to_remove.append(name)
+    processed_inputs = {}
 
-    for name in to_remove:
-        inputs.pop(name)
-
-    metadata_inputs = {}
-    to_remove = []
     all_inputs_params = {}
     all_inputs_params.update(action.signature.parameters)
     all_inputs_params.update(action.signature.inputs)
-    for key, value in inputs.items():
-        type_ = all_inputs_params[key].qiime_type
+    for k, v in inputs.items():
+        type_ = all_inputs_params[k].qiime_type
+
         if type_ == Metadata or type_ == MetadataColumn:
-            metadata_inputs[key] = _convert_metadata(type_, inputs[key])
-            to_remove.append(key)
+            processed_inputs[k] = _convert_metadata(type_, inputs[k])
+        elif 'List' in str(type_) and k in action.signature.inputs:
+            if 'Metadata' in str(type_) or 'MetadataColumn' in str(type_):
+                new_list = [_convert_metadata(type_, v) for v in inputs[k]]
+            else:
+                new_list = [sdk.Artifact.load(v) for v in inputs[k]]
 
-    for name in to_remove:
-        inputs.pop(name)
+            processed_inputs[k] = new_list
+        elif 'Set' in str(type_) and k in action.signature.inputs:
+            if 'Metadata' in str(type_) or 'MetadataColumn' in str(type_):
+                new_set = set(_convert_metadata(type_, v) for v in inputs[k])
+            else:
+                new_set = set(sdk.Artifact.load(v) for v in inputs[k])
 
-    inputs = {k: sdk.Artifact.load(v) for k, v in inputs.items()
-              if v is not None}
+            processed_inputs[k] = new_set
+        elif k in action.signature.inputs:
+            processed_inputs[k] = sdk.Artifact.load(v)
+        else:
+            processed_inputs[k] = v
 
-    inputs.update(metadata_inputs)
-
-    results = action(**inputs, **params)
+    results = action(**processed_inputs)
 
     for name, result in zip(results._fields, results):
         result.save(name)
