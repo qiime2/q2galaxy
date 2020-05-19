@@ -1,5 +1,4 @@
 import qiime2
-from qiime2.plugin import Metadata, MetadataColumn
 import qiime2.sdk as sdk
 
 

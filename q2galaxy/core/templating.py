@@ -20,8 +20,8 @@ qiime_type_to_param_type = {
     # read metadata from a file some time later, so can't we just always take
     # the filepath and let the framework handle everything table related
     'Metadata': 'data',
-    # TODO: Look at what galaxy's internal concept of multiple inputs is
     'MetadataColumn': 'data',
+    # TODO: Look at what galaxy's internal concept of multiple inputs is
     'List': 'data',
     'Set': 'data',
 }
