@@ -25,14 +25,14 @@ def action_runner(plugin_id, action_id, inputs):
                 raise(e)
 
         if qiime2.sdk.util.is_collection_type(type_):
-            if 'List' in str(type_):
+            if type_.name == 'List':
                 if qiime2.sdk.util.is_metadata_type(type_):
                     new_list = [_convert_metadata(type_, v) for v in inputs[k]]
                 else:
                     new_list = [sdk.Artifact.load(v) for v in inputs[k]]
 
                 processed_inputs[k] = new_list
-            elif 'Set' in str(type_):
+            elif type_.name == 'Set':
                 if qiime2.sdk.is_metadata_type(type_):
                     new_set = \
                         set(_convert_metadata(type_, v) for v in inputs[k])
