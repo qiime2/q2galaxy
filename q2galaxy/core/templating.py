@@ -152,7 +152,8 @@ def make_parameter_param(name, spec):
 
         if qiime_type.name == 'MetadataColumn':
             params.append(XMLNode('param', name=f'{name}_Column', type='text',
-                                  optional='true'))
+                                  optional='true', label='Specify which '
+                                  'column from the metadata to use'))
 
     return params
 
