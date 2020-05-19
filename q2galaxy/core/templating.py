@@ -133,6 +133,10 @@ def make_parameter_param(name, spec):
         else:
             XML_attrs['type'] = qiime_type_to_param_type[qiime_type.name]
 
+        # Any galaxy parameter that doesn't have a default value must be
+        # optional. These parameters being "optional" isn't displayed to the
+        # user in galaxy in any way, and the qiime method SHOULD behave as
+        # expected if they are left blank.
         if (qiime_type.name != 'Str' and spec.default == 'auto') \
                 or str(spec.default) == 'NOVALUE' \
                 or str(spec.default) == 'None':
