@@ -4,7 +4,6 @@ import xml.dom.minidom as dom
 import qiime2.sdk as sdk
 from qiime2.core.type.grammar import UnionExp
 from qiime2.core.type.meta import TypeVarExp
-from qiime2.core.type.primitive import Choices
 
 import q2galaxy
 
@@ -94,7 +93,7 @@ def make_input_param(name, spec):
 # tsv and a column to select from the tsv. How are we going to handle that
 # here? We can use galaxy's built in concept of a table in some way. Or we can
 # take in a tsv and a string representing the column to select and handle it in
-# qiime
+# qiime2
 def make_parameter_param(name, spec):
     if isinstance(spec.qiime_type, TypeVarExp):
         qiime_types = list(spec.qiime_type.members)
@@ -123,7 +122,7 @@ def make_parameter_param(name, spec):
                 range_ = qiime_type.predicate.to_ast()['range']
                 XML_attrs['type'] = qiime_type_to_param_type[qiime_type.name]
 
-                if qiime_type.name == 'List' or qiime_type.name == 'Set':
+                if sdk.util.is_collection_type(qiime_type):
                     XML_attrs['multiple'] = 'true'
 
                 if range_[0] is not None:

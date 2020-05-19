@@ -16,22 +16,24 @@ def action_runner(plugin_id, action_id, inputs):
     for k, v in inputs.items():
         type_ = all_inputs_params[k].qiime_type
 
-        if type_ == Metadata or type_ == MetadataColumn:
+        if qiime2.sdk.util.is_collection_type(type_):
+            if 'List' in str(type_):
+                if qiime2.sdk.util.is_metadata_type(type_):
+                    new_list = [_convert_metadata(type_, v) for v in inputs[k]]
+                else:
+                    new_list = [sdk.Artifact.load(v) for v in inputs[k]]
+
+                processed_inputs[k] = new_list
+            elif 'Set' in str(type_):
+                if qiime2.sdk.is_metadata_type(type_):
+                    new_set = \
+                        set(_convert_metadata(type_, v) for v in inputs[k])
+                else:
+                    new_set = set(sdk.Artifact.load(v) for v in inputs[k])
+
+                processed_inputs[k] = new_set
+        elif qiime2.sdk.util.is_metadata_type(type_):
             processed_inputs[k] = _convert_metadata(type_, inputs[k])
-        elif 'List' in str(type_) and k in action.signature.inputs:
-            if 'Metadata' in str(type_) or 'MetadataColumn' in str(type_):
-                new_list = [_convert_metadata(type_, v) for v in inputs[k]]
-            else:
-                new_list = [sdk.Artifact.load(v) for v in inputs[k]]
-
-            processed_inputs[k] = new_list
-        elif 'Set' in str(type_) and k in action.signature.inputs:
-            if 'Metadata' in str(type_) or 'MetadataColumn' in str(type_):
-                new_set = set(_convert_metadata(type_, v) for v in inputs[k])
-            else:
-                new_set = set(sdk.Artifact.load(v) for v in inputs[k])
-
-            processed_inputs[k] = new_set
         elif k in action.signature.inputs:
             processed_inputs[k] = sdk.Artifact.load(v)
         else:
