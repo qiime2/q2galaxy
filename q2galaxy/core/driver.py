@@ -13,7 +13,16 @@ def action_runner(plugin_id, action_id, inputs):
     all_inputs_params.update(action.signature.parameters)
     all_inputs_params.update(action.signature.inputs)
     for k, v in inputs.items():
-        type_ = all_inputs_params[k].qiime_type
+        try:
+            type_ = all_inputs_params[k].qiime_type
+        # If we had a metadata column arg then the extra arg generated to
+        # accept the column specifier won't be in the signature and should be
+        # skipped
+        except KeyError as e:
+            if '_Column' in str(e):
+                continue
+            else:
+                raise(e)
 
         if qiime2.sdk.util.is_collection_type(type_):
             if 'List' in str(type_):
@@ -32,7 +41,11 @@ def action_runner(plugin_id, action_id, inputs):
 
                 processed_inputs[k] = new_set
         elif qiime2.sdk.util.is_metadata_type(type_):
-            processed_inputs[k] = _convert_metadata(type_, inputs[k])
+            if type_.name == 'MetadataColumn':
+                value = (inputs[k], inputs[f'{k}_Column'])
+            else:
+                value = inputs[k]
+            processed_inputs[k] = _convert_metadata(type_, value)
         elif k in action.signature.inputs:
             processed_inputs[k] = sdk.Artifact.load(v)
         else:
@@ -51,7 +64,7 @@ def get_version(plugin_id):
 
 
 def _convert_metadata(input_, value):
-    if input_ == 'MetadataColumn':
+    if input_.name == 'MetadataColumn':
         value, column = value
     fp = value
 
@@ -70,7 +83,7 @@ def _convert_metadata(input_, value):
             raise ValueError("There was an issue with viewing the artifact "
                              "%s as QIIME 2 Metadata:" % fp) from e
 
-    if input_ != 'MetadataColumn':
+    if input_.name != 'MetadataColumn':
         return metadata
     else:
         try:
