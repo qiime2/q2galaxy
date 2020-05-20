@@ -33,7 +33,7 @@ def action_runner(plugin_id, action_id, inputs):
 
                 processed_inputs[k] = new_list
             elif type_.name == 'Set':
-                if qiime2.sdk.is_metadata_type(type_):
+                if qiime2.sdk.util.is_metadata_type(type_):
                     new_set = \
                         set(_convert_metadata(type_, v) for v in inputs[k])
                 else:
