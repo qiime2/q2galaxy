@@ -67,7 +67,7 @@ def make_tool(conda_meta, plugin, action):
 
 def make_input_param(name, spec):
     optional_attrs = {}
-    if 'List' in str(spec.qiime_type) or 'Set' in str(spec.qiime_type):
+    if 'List' in spec.qiime_type.name or 'Set' in spec.qiime_type.name:
         optional_attrs['multiple'] = 'true'
 
     param = XMLNode('param', type='data', format='qza', name=name,
@@ -132,6 +132,12 @@ def make_parameter_param(name, spec):
 
                 if range_[1] is not None:
                     XML_attrs['max'] = str(range_[1])
+        elif 'List' in qiime_type.name or 'Set' in qiime_type.name:
+            # TODO: This needs to be more robust
+            XML_attrs['type'] = \
+                qiime_type_to_param_type[qiime_type.to_ast() \
+                    ['fields'][0]['name']]
+            XML_attrs['multiple'] = 'true'
         else:
             XML_attrs['type'] = qiime_type_to_param_type[qiime_type.name]
 
