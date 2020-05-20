@@ -146,7 +146,7 @@ def make_parameter_param(name, spec):
 
         if str(spec.description) != 'NOVALUE' and \
                 str(spec.description) != "None":
-            XML_attrs['label'] = str(spec.description)
+            XML_attrs['label'] = str(f'{name}: {spec.description}')
 
         param = XMLNode('param', name=name, **XML_attrs)
         for option in option_tags:
