@@ -116,7 +116,9 @@ def make_parameter_param(name, spec):
                 XML_attrs['type'] = 'select'
 
                 for choice in choices:
-                    option_tags.append(XMLNode('option', value=str(choice)))
+                    default = choice == spec.default
+                    option_tags.append(XMLNode('option', value=str(choice),
+                                               selected=str(default)))
 
             elif qiime_type.predicate.name == 'Range':
                 range_ = qiime_type.predicate.to_ast()['range']
@@ -137,7 +139,9 @@ def make_parameter_param(name, spec):
         # optional. These parameters being "optional" isn't displayed to the
         # user in galaxy in any way, and the qiime method SHOULD behave as
         # expected if they are left blank.
-        if (qiime_type.name != 'Str' and spec.default == 'auto') \
+        if qiime_type.name == 'Bool':
+            XML_attrs['checked'] = str(spec.default)
+        elif (qiime_type.name != 'Str' and spec.default == 'auto') \
                 or str(spec.default) == 'NOVALUE' \
                 or str(spec.default) == 'None':
             XML_attrs['optional'] = 'true'
