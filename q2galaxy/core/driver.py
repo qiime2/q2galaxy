@@ -24,20 +24,28 @@ def action_runner(plugin_id, action_id, inputs):
             else:
                 raise(e)
 
-        if qiime2.sdk.util.is_collection_type(type_):
+        if v is None or v == 'None':
+            processed_inputs[k] = None
+        elif qiime2.sdk.util.is_collection_type(type_):
+            inputs[k] = inputs[k].split(',')
+
             if type_.name == 'List':
                 if qiime2.sdk.util.is_metadata_type(type_):
                     new_list = [_convert_metadata(type_, v) for v in inputs[k]]
-                else:
+                elif k in action.signature.inputs:
                     new_list = [sdk.Artifact.load(v) for v in inputs[k]]
+                else:
+                    new_list = inputs[k]
 
                 processed_inputs[k] = new_list
             elif type_.name == 'Set':
                 if qiime2.sdk.util.is_metadata_type(type_):
                     new_set = \
                         set(_convert_metadata(type_, v) for v in inputs[k])
-                else:
+                elif k in action.signature.inputs:
                     new_set = set(sdk.Artifact.load(v) for v in inputs[k])
+                else:
+                    new_set = set(inputs[k])
 
                 processed_inputs[k] = new_set
         elif qiime2.sdk.util.is_metadata_type(type_):

@@ -15,15 +15,8 @@ qiime_type_to_param_type = {
     'Str': 'text',
     'Bool': 'boolean',
     'Float': 'float',
-    # TODO: Look at what galaxy's internal concept of tabular data is and apply
-    # it to metadata. . . Does this actually need to happen? We always seem to
-    # read metadata from a file some time later, so can't we just always take
-    # the filepath and let the framework handle everything table related
     'Metadata': 'data',
     'MetadataColumn': 'data',
-    # TODO: Look at what galaxy's internal concept of multiple inputs is
-    'List': 'data',
-    'Set': 'data',
 }
 
 
@@ -110,6 +103,12 @@ def make_parameter_param(name, spec):
         XML_attrs = {}
         option_tags = []
 
+        if sdk.util.is_collection_type(qiime_type):
+            XML_attrs['multiple'] = 'true'
+            # None of them seem to have more than one field, but it would be
+            # nice if this were more robust
+            qiime_type = qiime_type.fields[0]
+
         if qiime_type.predicate is not None:
             if qiime_type.predicate.name == 'Choices':
                 choices = qiime_type.predicate.to_ast()['choices']
@@ -124,20 +123,11 @@ def make_parameter_param(name, spec):
                 range_ = qiime_type.predicate.to_ast()['range']
                 XML_attrs['type'] = qiime_type_to_param_type[qiime_type.name]
 
-                if sdk.util.is_collection_type(qiime_type):
-                    XML_attrs['multiple'] = 'true'
-
                 if range_[0] is not None:
                     XML_attrs['min'] = str(range_[0])
 
                 if range_[1] is not None:
                     XML_attrs['max'] = str(range_[1])
-        elif 'List' in qiime_type.name or 'Set' in qiime_type.name:
-            # TODO: This needs to be more robust
-            XML_attrs['type'] = \
-                qiime_type_to_param_type[qiime_type.to_ast() \
-                    ['fields'][0]['name']]
-            XML_attrs['multiple'] = 'true'
         else:
             XML_attrs['type'] = qiime_type_to_param_type[qiime_type.name]
 
