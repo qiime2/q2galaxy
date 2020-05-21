@@ -64,7 +64,7 @@ def tests(output):
 def run(plugin, action, inputs):
     with open(inputs, 'r') as fh:
         config = json.load(fh)
-    # TODO: Something to do with jsonizing strings kinda butchers them. For
+    # Something to do with jsonizing strings kinda butchers them. For
     # instance, the where clause from filter-table filter-samples in moving
     # pictures goes from
     # "[body-site]='gut'"

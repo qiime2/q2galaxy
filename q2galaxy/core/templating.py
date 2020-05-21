@@ -80,13 +80,6 @@ def make_input_param(name, spec):
     return param
 
 
-# TODO: List and Set parameters are likely broken right now (may be working)
-
-# TODO: Metadata columns need to be handled somehow. In the cli we pass in a
-# tsv and a column to select from the tsv. How are we going to handle that
-# here? We can use galaxy's built in concept of a table in some way. Or we can
-# take in a tsv and a string representing the column to select and handle it in
-# qiime2
 def make_parameter_param(name, spec):
     if isinstance(spec.qiime_type, TypeVarExp):
         qiime_types = list(spec.qiime_type.members)
