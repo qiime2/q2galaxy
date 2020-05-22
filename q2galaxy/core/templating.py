@@ -220,13 +220,16 @@ def template_import_data():
     # TODO: This needs to involve selecting from preset choices, and we
     # probably want to support metadata
     inputs.append(XMLNode('param', name='type', type='text',
-                          label='The type of the data you want to import'))
+                          label='type: The type of the data you want to '
+                          'import'))
     inputs.append(XMLNode('param', name='input_path', type='text',
-                          label='The filepath to the data you want to import'))
+                          label='input_path: The filepath to the data you '
+                          'want to import'))
     # TODO: This also needs to involve selecting from preset choices
     inputs.append(XMLNode('param', name='input_format', type='text',
                           optional='true',
-                          label='The format you want to import the data as'))
+                          label='input_format: The format you want to import '
+                          'the data as, if in doubt leave blank'))
 
     output = XMLNode('outputs')
 
@@ -240,6 +243,9 @@ def template_import_data():
     tool.append(
         XMLNode('command', "q2galaxy run builtin import_data '$inputs'"))
     tool.append(make_config())
+    tool.append(XMLNode('description', 'Import data to Qiime2 artifacts'))
+    tool.append(XMLNode('help', 'This method allows for the importing of '
+                        'external data into Qiime2 artifacts.'))
 
     write_tool(tool, '/home/anthony/src/galaxy/tools/qiime2/import_data.xml')
 
@@ -248,18 +254,24 @@ def template_export_data():
     inputs = XMLNode('inputs')
 
     inputs.append(XMLNode('param', name='input_path', type='text',
-                          label='The path to the data you want to export'))
+                          label='input_path: The path to the artifact you '
+                          'want to export'))
     inputs.append(XMLNode('param', name='output_path', type='text',
-                          label='Path to save export data to'))
+                          label='output_path: Path to save exported data to'))
     # TODO: This probably needs to involve selecting from preset choices
     inputs.append(XMLNode('param', name='output_format', type='text',
                           optional='true',
-                          label='The format you want to export the data as'))
+                          label='output_format: The format you want to export '
+                          'the data as, if in doubt leave blank'))
 
     tool = XMLNode('tool', id='export_data', name='export_data')
     tool.append(inputs)
     tool.append(
         XMLNode('command', "q2galaxy run builtin export_data '$inputs'"))
     tool.append(make_config())
+    tool.append(XMLNode('description', 'Export data from Qiime2 artifacts'))
+    tool.append(XMLNode('help', 'This method allows for the exporting of data '
+                        'contained in Qiime2 artifacts to external '
+                        'directories'))
 
     write_tool(tool, '/home/anthony/src/galaxy/tools/qiime2/export_data.xml')
