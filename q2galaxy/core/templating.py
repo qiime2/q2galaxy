@@ -231,7 +231,8 @@ def template_import_data():
     output = XMLNode('outputs')
 
     # TODO: Maybe we add name as a parameter
-    output.append(XMLNode('data', format='qza', name='imported.qza'))
+    output.append(XMLNode('data', format='qza', name='imported',
+                          from_work_dir='imported.qza'))
 
     tool = XMLNode('tool', id='import_data', name='import_data')
     tool.append(inputs)

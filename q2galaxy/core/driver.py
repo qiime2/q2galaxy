@@ -73,8 +73,7 @@ def builtin_runner(action_id, inputs):
     action = builtin_map[action_id]
     result = action(**inputs)
 
-    # TODO: I'm not sure what to save this as
-    result.save('test')
+    result.save('imported')
 
 
 def get_version(plugin_id):
