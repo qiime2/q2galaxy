@@ -65,7 +65,6 @@ def action_runner(plugin_id, action_id, inputs):
     results = action(**processed_inputs)
 
     for name, result in zip(results._fields, results):
-        raise ValueError(f'\n{result}\n{name}\n')
         result.save(name)
 
 
@@ -73,7 +72,8 @@ def builtin_runner(action_id, inputs):
     action = builtin_map[action_id]
     result = action(**inputs)
 
-    result.save('imported')
+    if result is not None:
+        result.save('imported')
 
 
 def get_version(plugin_id):

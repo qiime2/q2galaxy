@@ -211,9 +211,9 @@ def write_tool(tool, filepath):
 
 def template_builtins():
     template_import_data()
+    template_export_data()
 
 
-# TODO: Needs a command
 def template_import_data():
     inputs = XMLNode('inputs')
 
@@ -242,3 +242,33 @@ def template_import_data():
     tool.append(make_config())
 
     write_tool(tool, '/home/anthony/src/galaxy/tools/qiime2/import_data.xml')
+
+
+def template_export_data():
+    inputs = XMLNode('inputs')
+
+    # TODO: This needs to involve selecting from preset choices, and we
+    # probably want to support metadata
+    inputs.append(XMLNode('param', name='input_path', type='text',
+                          label='The path to the data you want to export'))
+    inputs.append(XMLNode('param', name='output_path', type='text',
+                          label='Path to save export data to'))
+    # TODO: This also needs to involve selecting from preset choices
+    inputs.append(XMLNode('param', name='output_format', type='text',
+                          optional='true',
+                          label='The format you want to export the data as'))
+
+    # output = XMLNode('outputs')
+
+    # # TODO: Maybe we add name as a parameter
+    # output.append(XMLNode('data', format='qza', name='imported',
+    #                       from_work_dir='imported.qza'))
+
+    tool = XMLNode('tool', id='export_data', name='export_data')
+    tool.append(inputs)
+    # tool.append(output)
+    tool.append(
+        XMLNode('command', "q2galaxy run builtin export_data '$inputs'"))
+    tool.append(make_config())
+
+    write_tool(tool, '/home/anthony/src/galaxy/tools/qiime2/export_data.xml')
