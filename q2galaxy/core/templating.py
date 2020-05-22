@@ -207,3 +207,37 @@ def write_tool(tool, filepath):
     xmlstr = dom.parseString(xml.tostring(tool)).toprettyxml(indent="   ")
     with open(filepath, 'w') as fh:
         fh.write(xmlstr)
+
+
+def template_builtins():
+    template_import_data()
+
+
+# TODO: Needs a command
+def template_import_data():
+    inputs = XMLNode('inputs')
+
+    # TODO: This needs to involve selecting from preset choices, and we
+    # probably want to support metadata
+    inputs.append(XMLNode('param', name='type', type='text',
+                          label='The type of the data you want to import'))
+    inputs.append(XMLNode('param', name='input_path', type='text',
+                          label='The filepath to the data you want to import'))
+    # TODO: This also needs to involve selecting from preset choices
+    inputs.append(XMLNode('param', name='input_format', type='text',
+                          optional='true',
+                          label='The format you want to import the data as'))
+
+    output = XMLNode('outputs')
+
+    # TODO: Maybe we add name as a parameter
+    output.append(XMLNode('data', format='qza', name='imported.qza'))
+
+    tool = XMLNode('tool', id='import_data', name='import_data')
+    tool.append(inputs)
+    tool.append(output)
+    tool.append(
+        XMLNode('command', "q2galaxy run builtin import_data '$inputs'"))
+    tool.append(make_config())
+
+    write_tool(tool, '/home/anthony/src/galaxy/tools/qiime2/import_data.xml')

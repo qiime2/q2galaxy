@@ -1,6 +1,8 @@
 import qiime2
 import qiime2.sdk as sdk
 
+from q2galaxy.core.builtins import builtin_map
+
 
 def action_runner(plugin_id, action_id, inputs):
     pm = sdk.PluginManager()
@@ -53,6 +55,7 @@ def action_runner(plugin_id, action_id, inputs):
                 value = (inputs[k], inputs[f'{k}_Column'])
             else:
                 value = inputs[k]
+
             processed_inputs[k] = _convert_metadata(type_, value)
         elif k in action.signature.inputs:
             processed_inputs[k] = sdk.Artifact.load(v)
@@ -62,7 +65,16 @@ def action_runner(plugin_id, action_id, inputs):
     results = action(**processed_inputs)
 
     for name, result in zip(results._fields, results):
+        raise ValueError(f'\n{result}\n{name}\n')
         result.save(name)
+
+
+def builtin_runner(action_id, inputs):
+    action = builtin_map[action_id]
+    result = action(**inputs)
+
+    # TODO: I'm not sure what to save this as
+    result.save('test')
 
 
 def get_version(plugin_id):
