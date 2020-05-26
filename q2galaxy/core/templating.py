@@ -217,11 +217,15 @@ def template_builtins():
 def template_import_data():
     inputs = XMLNode('inputs')
 
-    # TODO: This needs to involve selecting from preset choices, and we
-    # probably want to support metadata
-    inputs.append(XMLNode('param', name='type', type='text',
-                          label='type: The type of the data you want to '
-                          'import'))
+    # TODO: I think we talked about not using that importable_types thing in
+    # new places while talking about the import wizard, but is there a better
+    # way to do this?
+    type_param = XMLNode('param', name='type', type='select',
+                         label='type: The type of the data you want to import')
+    for type_ in sorted(sdk.PluginManager().importable_types, key=repr):
+        type_param.append(XMLNode('option', value=type_))
+
+    inputs.append(type_param)
     inputs.append(XMLNode('param', name='input_path', type='text',
                           label='input_path: The filepath to the data you '
                           'want to import'))
