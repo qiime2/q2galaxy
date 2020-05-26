@@ -215,6 +215,7 @@ def template_builtins():
 
 
 def template_import_data():
+    pm = sdk.PluginManager()
     inputs = XMLNode('inputs')
 
     # TODO: I think we talked about not using that importable_types thing in
@@ -222,22 +223,23 @@ def template_import_data():
     # way to do this?
     type_param = XMLNode('param', name='type', type='select',
                          label='type: The type of the data you want to import')
-    for type_ in sorted(sdk.PluginManager().importable_types, key=repr):
+    for type_ in sorted(pm.importable_types, key=repr):
         type_param.append(XMLNode('option', value=type_))
-
     inputs.append(type_param)
+
     inputs.append(XMLNode('param', name='input_path', type='text',
                           label='input_path: The filepath to the data you '
                           'want to import'))
-    # TODO: This also needs to involve selecting from preset choices
-    inputs.append(XMLNode('param', name='input_format', type='text',
-                          optional='true',
-                          label='input_format: The format you want to import '
-                          'the data as, if in doubt leave blank'))
+
+    format_param = (XMLNode('param', name='input_format', type='select',
+                            optional='true',
+                            label='input_format: The format you want to '
+                            'import the data as, if in doubt leave blank'))
+    for format_ in sorted(pm.importable_formats, key=repr):
+        format_param.append(XMLNode('option', value=format_))
+    inputs.append(format_param)
 
     output = XMLNode('outputs')
-
-    # TODO: Maybe we add name as a parameter
     output.append(XMLNode('data', format='qza', name='imported',
                           from_work_dir='imported.qza'))
 

@@ -6,17 +6,11 @@ import qiime2.plugin
 
 
 def import_data(type, input_path, input_format):
-    if input_format == '':
+    if input_format == 'None':
         input_format = None
 
-    try:
-        artifact = qiime2.sdk.Artifact.import_data(type, input_path,
-                                                   view_type=input_format)
-    except qiime2.plugin.ValidationError as e:
-        raise ValueError(
-            f'There was a problem importing {input_path}: ') from e
-    except Exception as e:
-        raise ValueError('An unexpected error has occurred:') from e
+    artifact = qiime2.sdk.Artifact.import_data(type, input_path,
+                                               view_type=input_format)
 
     if input_format is None:
         input_format = artifact.format.__name__
