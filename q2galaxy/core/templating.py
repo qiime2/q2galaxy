@@ -269,7 +269,12 @@ def template_export_data():
                           'the data as, if in doubt leave blank'))
 
     output = XMLNode('outputs')
-    output.append(XMLNode('collection', type='list', name='exported'))
+    collection = XMLNode('collection', name='exported', type='list',
+                         label='List of exported data')
+    collection.append(XMLNode('discover_datasets', visible='true',
+                              pattern='__designation_and_ext__',
+                              ext='fastq.gz'))
+    output.append(collection)
 
     tool = XMLNode('tool', id='export_data', name='export_data')
     tool.append(inputs)
