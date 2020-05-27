@@ -259,19 +259,21 @@ def template_import_data():
 def template_export_data():
     inputs = XMLNode('inputs')
 
-    inputs.append(XMLNode('param', name='input_path', type='text',
-                          label='input_path: The path to the artifact you '
+    inputs.append(XMLNode('param', format="qza", name='input', type='data',
+                          label='input: The path to the artifact you '
                           'want to export'))
-    inputs.append(XMLNode('param', name='output_path', type='text',
-                          label='output_path: Path to save exported data to'))
     # TODO: This probably needs to involve selecting from preset choices
     inputs.append(XMLNode('param', name='output_format', type='text',
                           optional='true',
                           label='output_format: The format you want to export '
                           'the data as, if in doubt leave blank'))
 
+    output = XMLNode('outputs')
+    output.append(XMLNode('collection', type='list', name='exported'))
+
     tool = XMLNode('tool', id='export_data', name='export_data')
     tool.append(inputs)
+    tool.append(output)
     tool.append(
         XMLNode('command', "q2galaxy run builtin export_data '$inputs'"))
     tool.append(make_config())

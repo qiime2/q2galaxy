@@ -72,7 +72,7 @@ def builtin_runner(action_id, inputs):
     action = builtin_map[action_id]
     result = action(**inputs)
 
-    if result is not None:
+    if action_id == 'import_data':
         result.save('imported')
 
 

@@ -18,12 +18,13 @@ def import_data(type, input_path, input_format):
     return artifact
 
 
-# TODO: We probably want to be able to export history items and export that
-# stuff to the history
-def export_data(input_path, output_path, output_format):
+def export_data(input, output_format):
     if output_format == '':
         output_format = None
-    result = qiime2.sdk.Result.load(input_path)
+
+    result = qiime2.sdk.Result.load(input)
+    output_path = '.'
+
     if output_format is None:
         if isinstance(result, qiime2.sdk.Artifact):
             output_format = result.format.__name__
