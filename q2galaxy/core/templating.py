@@ -256,9 +256,15 @@ def template_import_data():
     write_tool(tool, '/home/anthony/src/galaxy/tools/qiime2/import_data.xml')
 
 
+# TODO: We need to do some amount of dynamic templating based on what format we
+# were given. Basically any file at the top level of the directory that has an
+# extension is easy to grab and through in a list. Things like MANIFEST that
+# have no extension, and things in nested directories are going to be more
+# complicated
 def template_export_data():
     inputs = XMLNode('inputs')
 
+    # This also works for qzvs even though the format just says qza so. . .
     inputs.append(XMLNode('param', format="qza", name='input', type='data',
                           label='input: The path to the artifact you '
                           'want to export'))
@@ -275,6 +281,8 @@ def template_export_data():
                               pattern='__designation_and_ext__',
                               ext='fastq.gz'))
     output.append(collection)
+    output.append(XMLNode('data', name='MANIFEST', from_work_dir='MANIFEST',
+                          auto_format='true'))
 
     tool = XMLNode('tool', id='export_data', name='export_data')
     tool.append(inputs)
