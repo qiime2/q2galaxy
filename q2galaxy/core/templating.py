@@ -271,7 +271,7 @@ def template_export_data():
     output = XMLNode('outputs')
     collection = XMLNode('collection', name='exported', type='list',
                          label='List of exported data')
-    collection.append(XMLNode('discover_datasets', visible='true',
+    collection.append(XMLNode('discover_datasets', visible='false',
                               pattern='__designation_and_ext__',
                               ext='fastq.gz'))
     output.append(collection)
