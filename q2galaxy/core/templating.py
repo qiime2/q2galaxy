@@ -278,10 +278,10 @@ def template_export_data():
     collection = XMLNode('collection', name='exported', type='list',
                          label='List of exported data')
     collection.append(XMLNode('discover_datasets', visible='false',
+                              pattern='__designation__', ext='txt'))
+    collection.append(XMLNode('discover_datasets', visible='false',
                               pattern='__designation_and_ext__'))
     output.append(collection)
-    output.append(XMLNode('data', name='MANIFEST', from_work_dir='MANIFEST',
-                          auto_format='true'))
 
     tool = XMLNode('tool', id='export_data', name='export_data')
     tool.append(inputs)
