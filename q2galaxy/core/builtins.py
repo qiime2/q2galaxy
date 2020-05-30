@@ -15,7 +15,8 @@ def import_data(type, input, input_format):
 
     for file_ in input:
         shutil.copy(file_, tmp.name)
-        shutil.copy(file_, '/home/anthony/tst/work/galaxy/test')
+        # This is just so I can make sure the right files are being moved
+        # shutil.copy(file_, '/home/anthony/tst/work/galaxy/test')
 
     artifact = qiime2.sdk.Artifact.import_data(type, tmp.name,
                                                view_type=input_format)
