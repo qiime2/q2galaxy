@@ -227,9 +227,9 @@ def template_import_data():
         type_param.append(XMLNode('option', value=type_))
     inputs.append(type_param)
 
-    inputs.append(XMLNode('param', name='input_path', type='text',
-                          label='input_path: The filepath to the data you '
-                          'want to import'))
+    inputs.append(XMLNode('param', name='input', type='data', multiple='true',
+                          label='input: The data you want to import to a '
+                          'Qiime2 artifact'))
 
     format_param = (XMLNode('param', name='input_format', type='select',
                             optional='true',
