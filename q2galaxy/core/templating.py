@@ -262,17 +262,23 @@ def template_import_data():
 # have no extension, and things in nested directories are going to be more
 # complicated
 def template_export_data():
+    pm = sdk.PluginManager()
     inputs = XMLNode('inputs')
 
     # This also works for qzvs even though the format just says qza so. . .
     inputs.append(XMLNode('param', format="qza", name='input', type='data',
                           label='input: The path to the artifact you '
                           'want to export'))
-    # TODO: This probably needs to involve selecting from preset choices
-    inputs.append(XMLNode('param', name='output_format', type='text',
-                          optional='true',
-                          label='output_format: The format you want to export '
-                          'the data as, if in doubt leave blank'))
+
+    format_param = XMLNode('param', name='output_format', type='select',
+                           optional='true',
+                           label='output_format: The format you want to '
+                           'export the data as, if in doubt leave blank')
+    for format_ in sorted(
+            pm.get_formats(
+                filter=sdk.plugin_manager.GetFormatFilters.EXPORTABLE)):
+        format_param.append(XMLNode('option', value=format_))
+    inputs.append(format_param)
 
     output = XMLNode('outputs')
     collection = XMLNode('collection', name='exported', type='list',
