@@ -218,9 +218,6 @@ def template_import_data():
     pm = sdk.PluginManager()
     inputs = XMLNode('inputs')
 
-    # TODO: I think we talked about not using that importable_types thing in
-    # new places while talking about the import wizard, but is there a better
-    # way to do this?
     type_param = XMLNode('param', name='type', type='select',
                          label='type: The type of the data you want to import')
     for type_ in sorted(pm.importable_types, key=repr):
@@ -256,11 +253,6 @@ def template_import_data():
     write_tool(tool, '/home/anthony/src/galaxy/tools/qiime2/import_data.xml')
 
 
-# TODO: We need to do some amount of dynamic templating based on what format we
-# were given. Basically any file at the top level of the directory that has an
-# extension is easy to grab and through in a list. Things like MANIFEST that
-# have no extension, and things in nested directories are going to be more
-# complicated
 def template_export_data():
     pm = sdk.PluginManager()
     inputs = XMLNode('inputs')
