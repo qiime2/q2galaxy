@@ -28,7 +28,7 @@ def import_data(type, input, input_format):
 
 
 def export_data(input, output_format):
-    if output_format == '':
+    if output_format == 'None':
         output_format = None
 
     result = qiime2.sdk.Result.load(input)
