@@ -224,10 +224,9 @@ def template_import_data():
         type_param.append(XMLNode('option', value=type_))
     inputs.append(type_param)
 
-    inputs.append(XMLNode('param', name='input', type='data', multiple='true',
-                          label='input: The data you want to import to a '
-                          'Qiime2 artifact'))
-
+    inputs.append(XMLNode('param', name='input_path', type='text',
+                          label='input_path: The filepath to the data you '
+                          'want to import'))
     format_param = (XMLNode('param', name='input_format', type='select',
                             optional='true',
                             label='input_format: The format you want to '
@@ -239,8 +238,8 @@ def template_import_data():
     output = XMLNode('outputs')
     output.append(XMLNode('data', format='qza', name='imported',
                           from_work_dir='imported.qza'))
-
     tool = XMLNode('tool', id='import_data', name='import_data')
+
     tool.append(inputs)
     tool.append(output)
     tool.append(
@@ -249,7 +248,6 @@ def template_import_data():
     tool.append(XMLNode('description', 'Import data to Qiime2 artifacts'))
     tool.append(XMLNode('help', 'This method allows for the importing of '
                         'external data into Qiime2 artifacts.'))
-
     write_tool(tool, '/home/anthony/src/galaxy/tools/qiime2/import_data.xml')
 
 
