@@ -8,22 +8,12 @@ import qiime2.plugin
 
 
 def import_data(type, input, input_format):
-    tmp = tempfile.TemporaryDirectory()
-
     if input_format == 'None':
         input_format = None
-
-    for file_ in input:
-        shutil.copy(file_, tmp.name)
-        # This is just so I can make sure the right files are being moved
-        shutil.copy(file_, '/home/anthony/tst/work/galaxy/test')
-
-    artifact = qiime2.sdk.Artifact.import_data(type, tmp.name,
+    artifact = qiime2.sdk.Artifact.import_data(type, input_path,
                                                view_type=input_format)
-
     if input_format is None:
         input_format = artifact.format.__name__
-
     return artifact
 
 
