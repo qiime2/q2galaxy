@@ -7,7 +7,7 @@ import qiime2.sdk
 import qiime2.plugin
 
 
-def import_data(type, input, input_format):
+def import_data(type, input_path, input_format):
     if input_format == 'None':
         input_format = None
     artifact = qiime2.sdk.Artifact.import_data(type, input_path,
