@@ -128,3 +128,5 @@ tags
 
 # End of https://www.gitignore.io/api/vim,python
 
+tests/**
+!tests/README.md

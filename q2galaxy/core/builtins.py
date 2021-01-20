@@ -1,7 +1,5 @@
 import os
 import distutils
-import shutil
-import tempfile
 
 import qiime2.sdk
 import qiime2.plugin
