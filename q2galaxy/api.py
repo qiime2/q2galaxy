@@ -4,6 +4,7 @@ import qiime2.sdk as _sdk
 
 import q2galaxy.core.templating as _templating
 import q2galaxy.core.environment as _environment
+import q2galaxy.core.usage as _usage
 
 
 def action_to_galaxy_xml(action):
@@ -24,18 +25,35 @@ def plugin_to_galaxy_xml(plugin):
 
 
 def template_plugin_iter(plugin, directory):
-    meta = _environment.find_conda_meta()
+    tool_dir = os.path.join(directory, plugin.project_name, '')
+    if not os.path.exists(tool_dir):
+        os.mkdir(tool_dir)
+        yield {'status': 'created', 'type': 'directory', 'path': tool_dir}
 
     for action in plugin.actions.values():
-        filename = _templating.get_tool_id(action) + '.xml'
-        path = os.path.join(directory, filename)
-        exists = os.path.exists(path)
-        tool = _templating.make_tool(meta, plugin, action)
-        _templating.write_tool(tool, path)
-        if not exists:
-            yield {'status': 'created', 'path': path}
-        else:
-            yield {'status': 'updated', 'path': path}
+        yield from template_tool_iter(plugin, action, tool_dir)
+
+
+def template_tool_iter(plugin, action, directory):
+    meta = _environment.find_conda_meta()
+
+    filename = _templating.get_tool_id(action) + '.xml'
+    path = os.path.join(directory, filename)
+    is_existing = os.path.exists(path)
+
+    test_dir = os.path.join(directory, 'test-data', '')
+    if not os.path.exists(test_dir):
+        os.mkdir(test_dir)
+        yield {'status': 'created', 'type': 'directory', 'path': test_dir}
+
+    tool = _templating.make_tool(meta, plugin, action)
+    _templating.write_tool(tool, path)
+    yield from _usage.collect_test_data(action, test_dir)
+
+    if not is_existing:
+        yield {'status': 'created', 'type': 'file', 'path': path}
+    else:
+        yield {'status': 'updated', 'type': 'file', 'path': path}
 
 
 def template_all_iter(directory):
@@ -45,7 +63,12 @@ def template_all_iter(directory):
 
 
 def template_plugin(plugin, directory):
-    for _ in template_plugin_iter(directory, plugin):
+    for _ in template_plugin_iter(plugin, directory):
+        pass
+
+
+def template_tool(plugin, action, directory):
+    for _ in template_tool_iter(plugin, action, directory):
         pass
 
 

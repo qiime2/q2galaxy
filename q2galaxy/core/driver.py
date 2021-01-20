@@ -2,11 +2,19 @@ import qiime2
 import qiime2.sdk as sdk
 
 from q2galaxy.core.builtins import builtin_map
+from q2galaxy.core.util import get_mystery_stew
+
+
+def _get_plugin(plugin_id):
+    if plugin_id == 'mystery_stew':
+        return get_mystery_stew()
+    else:
+        pm = sdk.PluginManager()
+        return pm.get_plugin(id=plugin_id)
 
 
 def action_runner(plugin_id, action_id, inputs):
-    pm = sdk.PluginManager()
-    plugin = pm.get_plugin(id=plugin_id)
+    plugin = _get_plugin(plugin_id)
     action = plugin.actions[action_id]
 
     processed_inputs = {}
@@ -77,8 +85,7 @@ def builtin_runner(action_id, inputs):
 
 
 def get_version(plugin_id):
-    pm = sdk.PluginManager()
-    plugin = pm.get_plugin(id=plugin_id)
+    plugin = _get_plugin(plugin_id)
     return plugin.version
 
 

@@ -1,11 +1,13 @@
-import xml.etree.ElementTree as xml
 import xml.dom.minidom as dom
+import xml.etree.ElementTree as xml
 
 import qiime2.sdk as sdk
 from qiime2.core.type.grammar import UnionExp
 from qiime2.core.type.meta import TypeVarExp
 
 import q2galaxy
+from q2galaxy.core.usage import TemplateTestUsage
+from q2galaxy.core.util import XMLNode
 
 INPUT_FILE = 'inputs.json'
 OUTPUT_FILE = 'outputs.json'
@@ -18,13 +20,6 @@ qiime_type_to_param_type = {
     'Metadata': 'data',
     'MetadataColumn': 'data',
 }
-
-
-def XMLNode(name_, _text=None, **attrs):
-    e = xml.Element(name_, attrs)
-    if _text is not None:
-        e.text = _text
-    return e
 
 
 def make_tool(conda_meta, plugin, action):
@@ -53,9 +48,20 @@ def make_tool(conda_meta, plugin, action):
     tool.append(make_config())
     tool.append(inputs)
     tool.append(outputs)
+    tool.append(make_tests(action))
     tool.append(XMLNode('help', action.description))
     tool.append(make_requirements(conda_meta, plugin.project_name))
     return tool
+
+
+def make_tests(action):
+    tests = XMLNode('tests')
+    for example in action.examples.values():
+        use = TemplateTestUsage()
+        example(use)
+        tests.append(use.xml)
+
+    return tests
 
 
 def make_input_param(name, spec):
@@ -165,7 +171,7 @@ def make_output(name, spec):
 
 
 def get_tool_id(action):
-    return action.get_import_path().replace('.', '_')
+    return action.id.replace('_', '-')
 
 
 def make_tool_name(plugin, action):
