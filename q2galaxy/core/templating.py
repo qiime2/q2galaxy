@@ -38,7 +38,7 @@ def make_tool(conda_meta, plugin, action):
         output = make_output(name, spec)
         outputs.append(output)
 
-    tool = XMLNode('tool', id=get_tool_id(action),
+    tool = XMLNode('tool', id=get_tool_id(plugin, action),
                    name=make_tool_name(plugin, action),
                    version=plugin.version,
                    profile='18.09')
@@ -49,7 +49,7 @@ def make_tool(conda_meta, plugin, action):
     tool.append(inputs)
     tool.append(outputs)
     tool.append(make_tests(action))
-    tool.append(XMLNode('help', action.description))
+    tool.append(make_help(plugin, action))
     tool.append(make_requirements(conda_meta, plugin.project_name))
     return tool
 
@@ -70,6 +70,7 @@ def make_input_param(name, spec):
         optional_attrs['multiple'] = 'true'
 
     param = XMLNode('param', type='data', format='qza', name=name,
+                    label=f'{name}: {str(spec.qiime_type)}',
                     **optional_attrs)
     options = XMLNode(
         'options', options_filter_attribute='metadata.semantic_type')
@@ -81,6 +82,9 @@ def make_input_param(name, spec):
         param.set('optional', 'true')
 
     for t in spec.qiime_type:
+        if t.name == 'List' or t.name == 'Set':
+            for t in t:
+                t = t.fields[0]
         options.append(XMLNode('filter', type='add_value', value=repr(t)))
 
     return param
@@ -114,19 +118,30 @@ def make_parameter_param(name, spec):
                 XML_attrs['type'] = 'select'
 
                 for choice in choices:
-                    default = choice == spec.default
+                    default = (choice == spec.default)
                     option_tags.append(XMLNode('option', value=str(choice),
                                                selected=str(default)))
 
             elif qiime_type.predicate.name == 'Range':
-                range_ = qiime_type.predicate.to_ast()['range']
+                min_, max_ = qiime_type.predicate.to_ast()['range']
                 XML_attrs['type'] = qiime_type_to_param_type[qiime_type.name]
 
-                if range_[0] is not None:
-                    XML_attrs['min'] = str(range_[0])
+                FLOAT_RESOLUTION = 0.000001
+                if min_ is not None:
+                    if not qiime_type.predicate.template.inclusive_start:
+                        if qiime_type.name == 'Int':
+                            min_ += 1
+                        else:
+                            min_ += FLOAT_RESOLUTION
+                    XML_attrs['min'] = str(min_)
 
-                if range_[1] is not None:
-                    XML_attrs['max'] = str(range_[1])
+                if max_ is not None:
+                    if not qiime_type.predicate.template.inclusive_end:
+                        if qiime_type.name == 'Int':
+                            max_ -= 1
+                        else:
+                            max_ -= FLOAT_RESOLUTION
+                    XML_attrs['max'] = str(max_)
         else:
             XML_attrs['type'] = qiime_type_to_param_type[qiime_type.name]
 
@@ -143,9 +158,9 @@ def make_parameter_param(name, spec):
         else:
             XML_attrs['value'] = str(spec.default)
 
-        if str(spec.description) != 'NOVALUE' and \
-                str(spec.description) != "None":
-            XML_attrs['label'] = str(f'{name}: {spec.description}')
+        XML_attrs['label'] = f'{name}: {str(spec.qiime_type)}'
+        if spec.has_description():
+            XML_attrs['help'] = spec.description
 
         param = XMLNode('param', name=name, **XML_attrs)
         for option in option_tags:
@@ -154,33 +169,68 @@ def make_parameter_param(name, spec):
         params.append(param)
 
         if qiime_type.name == 'MetadataColumn':
-            params.append(XMLNode('param', name=f'{name}_Column', type='text',
+            params.append(XMLNode('param', name=f'{name}_Column',
+                                  type='data_column', data_ref=name,
                                   optional='true', label='Specify which '
                                   'column from the metadata to use'))
 
     return params
 
 
-def make_output(name, spec):
+def make_filename(name, spec):
     if sdk.util.is_visualization_type(spec.qiime_type):
         ext = 'qzv'
     else:
         ext = 'qza'
-    file_name = '.'.join([name, ext])
-    return XMLNode('data', format=ext, name=name, from_work_dir=file_name)
+    return '.'.join([name, ext]), ext
 
 
-def get_tool_id(action):
-    return action.id.replace('_', '-')
+def make_output(name, spec):
+    file_name, ext = make_filename(name, spec)
+    XML_attrs = {}
+    if ext == 'qza':
+        XML_attrs['label'] = '${tool.id} on ${on_string}: ' + file_name
+    return XMLNode('data', format=ext, name=name, from_work_dir=file_name,
+                   **XML_attrs)
+
+
+def rst_header(header, level):
+    fill = ['=', '-', '*', '^'][level-1]
+    return '\n'.join(['', header, fill * len(header), ''])
+
+
+def make_help(plugin, action):
+    help_ = rst_header(' '.join(['QIIME 2:', plugin.name,
+                                 action.id.replace('_', '-')]), 1)
+    help_ += action.name + '\n'
+    help_ += "\n"
+    help_ += rst_header('Outputs:', 2)
+    for name, spec in action.signature.outputs.items():
+        description = '<no description>'
+        if spec.has_description():
+            description = spec.description
+        help_ += f":{make_filename(name, spec)[0]}: {description}\n"
+    help_ += "\n"
+    help_ += "|  \n"
+    help_ += rst_header("Description:", 2)
+    help_ += action.description
+    help_ += "\n\n"
+    help_ += "|  \n\n"
+    return XMLNode('help', help_)
+
+
+def get_tool_id(plugin, action):
+    return '.'.join(['q2', plugin.id, action.id])
 
 
 def make_tool_name(plugin, action):
-    return plugin.name + ' ' + action.id.replace('_', '-')
+    return ' '.join(['qiime2', plugin.name, action.id.replace('_', '-')])
 
 
 def make_command(plugin, action):
     return XMLNode(
-        'command', f"q2galaxy run {plugin.id} {action.id} '$inputs'")
+        'command', f"q2galaxy run {plugin.id} {action.id} '$inputs'",
+        detect_errors="aggressive")
 
 
 def make_version_command(plugin):
