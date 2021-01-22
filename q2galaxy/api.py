@@ -25,7 +25,8 @@ def plugin_to_galaxy_xml(plugin):
 
 
 def template_plugin_iter(plugin, directory):
-    tool_dir = os.path.join(directory, plugin.project_name, '')
+    suite_name = f'suite_qiime2_{plugin.id}'
+    tool_dir = os.path.join(directory, suite_name, '')
     if not os.path.exists(tool_dir):
         os.mkdir(tool_dir)
         yield {'status': 'created', 'type': 'directory', 'path': tool_dir}
@@ -37,7 +38,7 @@ def template_plugin_iter(plugin, directory):
 def template_tool_iter(plugin, action, directory):
     meta = _environment.find_conda_meta()
 
-    filename = _templating.get_tool_id(action) + '.xml'
+    filename = _templating.get_tool_id(plugin, action) + '.xml'
     path = os.path.join(directory, filename)
     is_existing = os.path.exists(path)
 
