@@ -7,49 +7,16 @@ import q2galaxy.core.environment as _environment
 import q2galaxy.core.usage as _usage
 
 
-def action_to_galaxy_xml(action):
-    meta = _environment.find_conda_meta()
-    plugin = _sdk.PluginManager().get_plugin(id=action.id)
-
-    return _templating.make_tool(meta, plugin, action)
-
-
-def plugin_to_galaxy_xml(plugin):
-    action_wrappers = {}
-    meta = _environment.find_conda_meta()
-    for action in plugin.actions.values():
-        key = (plugin.id, action.id)
-        action_wrappers[key] = _templating.make_tool(meta, plugin, action)
-
-    return action_wrappers
+def _template_dir_iter(directory):
+    if not os.path.exists(directory):
+        os.mkdir(directory)
+        yield {'status': 'created', 'type': 'directory', 'path': directory}
 
 
-def template_plugin_iter(plugin, directory):
-    suite_name = f'suite_qiime2_{plugin.id}'
-    tool_dir = os.path.join(directory, suite_name, '')
-    if not os.path.exists(tool_dir):
-        os.mkdir(tool_dir)
-        yield {'status': 'created', 'type': 'directory', 'path': tool_dir}
-
-    for action in plugin.actions.values():
-        yield from template_tool_iter(plugin, action, tool_dir)
-
-
-def template_tool_iter(plugin, action, directory):
-    meta = _environment.find_conda_meta()
-
-    filename = _templating.get_tool_id(plugin, action) + '.xml'
-    path = os.path.join(directory, filename)
+def _template_tool_iter(tool, path):
     is_existing = os.path.exists(path)
 
-    test_dir = os.path.join(directory, 'test-data', '')
-    if not os.path.exists(test_dir):
-        os.mkdir(test_dir)
-        yield {'status': 'created', 'type': 'directory', 'path': test_dir}
-
-    tool = _templating.make_tool(meta, plugin, action)
     _templating.write_tool(tool, path)
-    yield from _usage.collect_test_data(action, test_dir)
 
     if not is_existing:
         yield {'status': 'created', 'type': 'file', 'path': path}
@@ -57,10 +24,53 @@ def template_tool_iter(plugin, action, directory):
         yield {'status': 'updated', 'type': 'file', 'path': path}
 
 
+def template_action_iter(plugin, action, directory):
+    meta = _environment.find_conda_meta()
+
+    filename = _templating.make_tool_id(plugin.id, action.id) + '.xml'
+    filepath = os.path.join(directory, filename)
+    test_dir = os.path.join(directory, 'test-data', '')
+
+    tool = _templating.make_tool(meta, plugin, action)
+
+    yield from _template_tool_iter(tool, filepath)
+    yield from _template_dir_iter(test_dir)
+    yield from _usage.collect_test_data(action, test_dir)
+
+
+def template_plugin_iter(plugin, directory):
+    suite_name = f'suite_qiime2_{plugin.id}'
+    suite_dir = os.path.join(directory, suite_name, '')
+
+    yield from _template_dir_iter(suite_dir)
+    for action in plugin.actions.values():
+        yield from template_action_iter(plugin, action, suite_dir)
+
+
+def template_builtins_iter(directory):
+    meta = _environment.find_conda_meta()
+
+    suite_name = 'suite_qiime2_tools'
+    suite_dir = os.path.join(directory, suite_name, '')
+    yield from _template_dir_iter(suite_dir)
+
+    for tool_id, tool_maker in _templating.BUILTIN_MAKERS.items():
+        path = os.path.join(suite_dir, tool_id + '.xml')
+        tool = tool_maker(meta, tool_id)
+        yield from _template_tool_iter(tool, path)
+
+
 def template_all_iter(directory):
     pm = _sdk.PluginManager()
     for plugin in pm.plugins.values():
         yield from template_plugin_iter(plugin, directory)
+
+    yield from template_builtins_iter(directory)
+
+
+def template_action(plugin, action, directory):
+    for _ in template_action_iter(plugin, action, directory):
+        pass
 
 
 def template_plugin(plugin, directory):
@@ -68,8 +78,8 @@ def template_plugin(plugin, directory):
         pass
 
 
-def template_tool(plugin, action, directory):
-    for _ in template_tool_iter(plugin, action, directory):
+def template_builtins(directory):
+    for _ in template_builtins_iter(directory):
         pass
 
 

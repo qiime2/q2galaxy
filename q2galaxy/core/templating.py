@@ -1,4 +1,5 @@
 import io
+import types
 import xml.dom.minidom as dom
 import xml.etree.ElementTree as xml
 
@@ -40,8 +41,8 @@ def make_tool(conda_meta, plugin, action):
         output = make_output(name, spec)
         outputs.append(output)
 
-    tool = XMLNode('tool', id=get_tool_id(plugin, action),
-                   name=make_tool_name(plugin, action),
+    tool = XMLNode('tool', id=make_tool_id(plugin.id, action.id),
+                   name=make_tool_name(plugin.name, action.id),
                    version=plugin.version,
                    profile='18.09')
     tool.append(XMLNode('description', action.name))
@@ -222,12 +223,17 @@ def make_help(plugin, action):
     return XMLNode('help', help_)
 
 
-def get_tool_id(plugin, action):
-    return '.'.join(['q2', plugin.id, action.id])
+def make_tool_id(plugin_id, action_id):
+    return '.'.join(['q2', plugin_id, action_id])
 
 
-def make_tool_name(plugin, action):
-    return ' '.join(['qiime2', plugin.name, action.id.replace('_', '-')])
+def make_tool_name(plugin_name, action_id):
+    return ' '.join(['qiime2', plugin_name, action_id.replace('_', '-')])
+
+
+def make_tool_name_from_id(tool_id):
+    _, plugin, action = tool_id.split('.')
+    return make_tool_name(plugin, action)
 
 
 def make_command(plugin, action):
@@ -282,12 +288,7 @@ def write_tool(tool, filepath):
         fh.write(xmlstr)
 
 
-def template_builtins():
-    template_import_data()
-    template_export_data()
-
-
-def template_import_data():
+def make_builtin_import(meta, tool_id):
     pm = sdk.PluginManager()
     inputs = XMLNode('inputs')
 
@@ -311,7 +312,8 @@ def template_import_data():
     output = XMLNode('outputs')
     output.append(XMLNode('data', format='qza', name='imported',
                           from_work_dir='imported.qza'))
-    tool = XMLNode('tool', id='import_data', name='import_data')
+
+    tool = XMLNode('tool', id=tool_id, name=make_tool_name_from_id(tool_id))
 
     tool.append(inputs)
     tool.append(output)
@@ -321,10 +323,10 @@ def template_import_data():
     tool.append(XMLNode('description', 'Import data to Qiime2 artifacts'))
     tool.append(XMLNode('help', 'This method allows for the importing of '
                         'external data into Qiime2 artifacts.'))
-    write_tool(tool, '/home/anthony/src/galaxy/tools/qiime2/import_data.xml')
+    return tool
 
 
-def template_export_data():
+def make_builtin_export(meta, tool_id):
     pm = sdk.PluginManager()
     inputs = XMLNode('inputs')
 
@@ -352,7 +354,7 @@ def template_export_data():
                               pattern='__designation_and_ext__'))
     output.append(collection)
 
-    tool = XMLNode('tool', id='export_data', name='export_data')
+    tool = XMLNode('tool', id=tool_id, name=make_tool_name_from_id(tool_id))
     tool.append(inputs)
     tool.append(output)
     tool.append(
@@ -363,4 +365,16 @@ def template_export_data():
                         'contained in Qiime2 artifacts to external '
                         'directories'))
 
-    write_tool(tool, '/home/anthony/src/galaxy/tools/qiime2/export_data.xml')
+    return tool
+
+
+def make_builtin_to_tabular(meta, tool_id):
+    tool = XMLNode('tool', id=tool_id, name=make_tool_name_from_id(tool_id))
+    return tool
+
+
+BUILTIN_MAKERS = types.MappingProxyType({
+    make_tool_id('tools', 'import'): make_builtin_import,
+    make_tool_id('tools', 'export'): make_builtin_export,
+    make_tool_id('tools', 'qza_to_tabular'): make_builtin_to_tabular,
+})
