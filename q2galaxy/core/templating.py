@@ -1,6 +1,8 @@
+import io
 import xml.dom.minidom as dom
 import xml.etree.ElementTree as xml
 
+import qiime2
 import qiime2.sdk as sdk
 from qiime2.core.type.grammar import UnionExp
 from qiime2.core.type.meta import TypeVarExp
@@ -50,6 +52,7 @@ def make_tool(conda_meta, plugin, action):
     tool.append(outputs)
     tool.append(make_tests(action))
     tool.append(make_help(plugin, action))
+    tool.append(make_citations(plugin, action))
     tool.append(make_requirements(conda_meta, plugin.project_name))
     return tool
 
@@ -243,9 +246,23 @@ def make_config():
     return configfiles
 
 
-def make_citations(citations):
-    # TODO: split our BibTeX up into single entries
-    pass
+def make_citations(plugin=None, action=None):
+    citations_xml = XMLNode('citations')
+    citations = []
+    if action is not None:
+        citations.extend(action.citations)
+    if plugin is not None:
+        citations.extend(plugin.citations)
+
+    citations.extend(qiime2.__citations__)
+
+    for idx, cite_record in enumerate(citations, 1):
+        with io.StringIO() as fh:
+            sdk.Citations([(f'cite{idx}', cite_record)]).save(fh)
+            citations_xml.append(XMLNode('citation', fh.getvalue(),
+                                         type='bibtex'))
+
+    return citations_xml
 
 
 def make_requirements(conda_meta, project_name):
