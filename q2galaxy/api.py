@@ -2,7 +2,8 @@ import os
 
 import qiime2.sdk as _sdk
 
-import q2galaxy.core.templating as _templating
+import q2galaxy.core.util as _util
+import q2galaxy.core.templaters as _templaters
 import q2galaxy.core.environment as _environment
 import q2galaxy.core.usage as _usage
 
@@ -16,7 +17,7 @@ def _template_dir_iter(directory):
 def _template_tool_iter(tool, path):
     is_existing = os.path.exists(path)
 
-    _templating.write_tool(tool, path)
+    _util.write_tool(tool, path)
 
     if not is_existing:
         yield {'status': 'created', 'type': 'file', 'path': path}
@@ -27,11 +28,11 @@ def _template_tool_iter(tool, path):
 def template_action_iter(plugin, action, directory):
     meta = _environment.find_conda_meta()
 
-    filename = _templating.make_tool_id(plugin.id, action.id) + '.xml'
+    filename = _templaters.make_tool_id(plugin.id, action.id) + '.xml'
     filepath = os.path.join(directory, filename)
     test_dir = os.path.join(directory, 'test-data', '')
 
-    tool = _templating.make_tool(meta, plugin, action)
+    tool = _templaters.make_tool(meta, plugin, action)
 
     yield from _template_tool_iter(tool, filepath)
     yield from _template_dir_iter(test_dir)
@@ -54,7 +55,7 @@ def template_builtins_iter(directory):
     suite_dir = os.path.join(directory, suite_name, '')
     yield from _template_dir_iter(suite_dir)
 
-    for tool_id, tool_maker in _templating.BUILTIN_MAKERS.items():
+    for tool_id, tool_maker in _templaters.BUILTIN_MAKERS.items():
         path = os.path.join(suite_dir, tool_id + '.xml')
         tool = tool_maker(meta, tool_id)
         yield from _template_tool_iter(tool, path)
