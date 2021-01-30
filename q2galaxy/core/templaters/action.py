@@ -1,19 +1,12 @@
-import io
-import types
-import xml.dom.minidom as dom
-import xml.etree.ElementTree as xml
-
-import qiime2
 import qiime2.sdk as sdk
 from qiime2.core.type.grammar import UnionExp
 from qiime2.core.type.meta import TypeVarExp
 
-import q2galaxy
 from q2galaxy.core.usage import TemplateTestUsage
-from q2galaxy.core.util import XMLNode
-
-INPUT_FILE = 'inputs.json'
-OUTPUT_FILE = 'outputs.json'
+from q2galaxy.core.util import XMLNode, rst_header
+from q2galaxy.core.templaters.common import (
+    make_tool_id, make_tool_name, make_config, make_citations,
+    make_requirements)
 
 qiime_type_to_param_type = {
     'Int': 'integer',
@@ -79,6 +72,14 @@ def make_input_param(name, spec):
     options = XMLNode(
         'options', options_filter_attribute='metadata.semantic_type')
     param.append(options)
+
+    _validator_set = repr(set(map(str, spec.qiime_type)))
+    validator = XMLNode(
+        'validator',
+        'hasattr(value.metadata, "semantic_type")'
+        f' and value.metadata.semantic_type in {_validator_set}',
+        type='expression', message='Incompatible type')
+    param.append(validator)
 
     if spec.has_description():
         param.set('help', spec.description)
@@ -198,11 +199,6 @@ def make_output(name, spec):
                    **XML_attrs)
 
 
-def rst_header(header, level):
-    fill = ['=', '-', '*', '^'][level-1]
-    return '\n'.join(['', header, fill * len(header), ''])
-
-
 def make_help(plugin, action):
     help_ = rst_header(' '.join(['QIIME 2:', plugin.name,
                                  action.id.replace('_', '-')]), 1)
@@ -223,19 +219,6 @@ def make_help(plugin, action):
     return XMLNode('help', help_)
 
 
-def make_tool_id(plugin_id, action_id):
-    return '.'.join(['q2', plugin_id, action_id])
-
-
-def make_tool_name(plugin_name, action_id):
-    return ' '.join(['qiime2', plugin_name, action_id.replace('_', '-')])
-
-
-def make_tool_name_from_id(tool_id):
-    _, plugin, action = tool_id.split('.')
-    return make_tool_name(plugin, action)
-
-
 def make_command(plugin, action):
     return XMLNode(
         'command', f"q2galaxy run {plugin.id} {action.id} '$inputs'",
@@ -244,137 +227,3 @@ def make_command(plugin, action):
 
 def make_version_command(plugin):
     return XMLNode('version_command', f'q2galaxy version {plugin.id}')
-
-
-def make_config():
-    configfiles = XMLNode('configfiles')
-    configfiles.append(XMLNode('inputs', name='inputs', data_style='paths'))
-    return configfiles
-
-
-def make_citations(plugin=None, action=None):
-    citations_xml = XMLNode('citations')
-    citations = []
-    if action is not None:
-        citations.extend(action.citations)
-    if plugin is not None:
-        citations.extend(plugin.citations)
-
-    citations.extend(qiime2.__citations__)
-
-    for idx, cite_record in enumerate(citations, 1):
-        with io.StringIO() as fh:
-            sdk.Citations([(f'cite{idx}', cite_record)]).save(fh)
-            citations_xml.append(XMLNode('citation', fh.getvalue(),
-                                         type='bibtex'))
-
-    return citations_xml
-
-
-def make_requirements(conda_meta, project_name):
-    requirements = XMLNode('requirements')
-    for dep, version in conda_meta.iter_deps(project_name, include_self=True):
-        r = XMLNode('requirement', dep, type='package', version=version)
-        requirements.append(r)
-
-    requirements.append(XMLNode('requirement', 'q2galaxy',
-                                type='package', version=q2galaxy.__version__))
-    return requirements
-
-
-def write_tool(tool, filepath):
-    xmlstr = dom.parseString(xml.tostring(tool)).toprettyxml(indent="   ")
-    with open(filepath, 'w') as fh:
-        fh.write(xmlstr)
-
-
-def make_builtin_import(meta, tool_id):
-    pm = sdk.PluginManager()
-    inputs = XMLNode('inputs')
-
-    type_param = XMLNode('param', name='type', type='select',
-                         label='type: The type of the data you want to import')
-    for type_ in sorted(pm.importable_types, key=repr):
-        type_param.append(XMLNode('option', value=type_))
-    inputs.append(type_param)
-
-    inputs.append(XMLNode('param', name='input_path', type='text',
-                          label='input_path: The filepath to the data you '
-                          'want to import'))
-    format_param = (XMLNode('param', name='input_format', type='select',
-                            optional='true',
-                            label='input_format: The format you want to '
-                            'import the data as, if in doubt leave blank'))
-    for format_ in sorted(pm.importable_formats, key=repr):
-        format_param.append(XMLNode('option', value=format_))
-    inputs.append(format_param)
-
-    output = XMLNode('outputs')
-    output.append(XMLNode('data', format='qza', name='imported',
-                          from_work_dir='imported.qza'))
-
-    tool = XMLNode('tool', id=tool_id, name=make_tool_name_from_id(tool_id))
-
-    tool.append(inputs)
-    tool.append(output)
-    tool.append(
-        XMLNode('command', "q2galaxy run builtin import_data '$inputs'"))
-    tool.append(make_config())
-    tool.append(XMLNode('description', 'Import data to Qiime2 artifacts'))
-    tool.append(XMLNode('help', 'This method allows for the importing of '
-                        'external data into Qiime2 artifacts.'))
-    return tool
-
-
-def make_builtin_export(meta, tool_id):
-    pm = sdk.PluginManager()
-    inputs = XMLNode('inputs')
-
-    # This also works for qzvs even though the format just says qza so. . .
-    inputs.append(XMLNode('param', format="qza", name='input', type='data',
-                          label='input: The path to the artifact you '
-                          'want to export'))
-
-    format_param = XMLNode('param', name='output_format', type='select',
-                           optional='true',
-                           label='output_format: The format you want to '
-                           'export the data as, if in doubt leave blank')
-    for format_ in sorted(
-            pm.get_formats(
-                filter=sdk.plugin_manager.GetFormatFilters.EXPORTABLE)):
-        format_param.append(XMLNode('option', value=format_))
-    inputs.append(format_param)
-
-    output = XMLNode('outputs')
-    collection = XMLNode('collection', name='exported', type='list',
-                         label='List of exported data')
-    collection.append(XMLNode('discover_datasets', visible='false',
-                              pattern='__designation__', ext='txt'))
-    collection.append(XMLNode('discover_datasets', visible='false',
-                              pattern='__designation_and_ext__'))
-    output.append(collection)
-
-    tool = XMLNode('tool', id=tool_id, name=make_tool_name_from_id(tool_id))
-    tool.append(inputs)
-    tool.append(output)
-    tool.append(
-        XMLNode('command', "q2galaxy run builtin export_data '$inputs'"))
-    tool.append(make_config())
-    tool.append(XMLNode('description', 'Export data from Qiime2 artifacts'))
-    tool.append(XMLNode('help', 'This method allows for the exporting of data '
-                        'contained in Qiime2 artifacts to external '
-                        'directories'))
-
-    return tool
-
-
-def make_builtin_to_tabular(meta, tool_id):
-    tool = XMLNode('tool', id=tool_id, name=make_tool_name_from_id(tool_id))
-    return tool
-
-
-BUILTIN_MAKERS = types.MappingProxyType({
-    make_tool_id('tools', 'import'): make_builtin_import,
-    make_tool_id('tools', 'export'): make_builtin_export,
-    make_tool_id('tools', 'qza_to_tabular'): make_builtin_to_tabular,
-})

@@ -4,10 +4,10 @@ import click
 
 import qiime2.sdk as sdk
 
-from q2galaxy.core.driver import action_runner, builtin_runner, get_version
+from q2galaxy.core.drivers import action_runner, builtin_runner, get_version
 from q2galaxy.api import (template_plugin_iter, template_all_iter,
                           template_builtins_iter)
-from q2galaxy.core.util import get_mystery_stew
+from q2galaxy.core.util import get_mystery_stew, galaxy_unesc
 
 _OUTPUT_DIR = click.Path(file_okay=False, dir_okay=True, exists=True)
 
@@ -81,8 +81,7 @@ def run(plugin, action, inputs):
     # This needs to be undone, so we replace that here:
     for key, value in config.items():
         if type(value) == str:
-            config[key] = value.replace('__sq__', "'").replace('__dq__', '"') \
-                .replace('__ob__', '[').replace('__cb__', ']')
+            config[key] = galaxy_unesc(value)
 
     if plugin == 'tools':
         builtin_runner(action, config)
