@@ -3,16 +3,20 @@ import os
 from qiime2.sdk.usage import DiagnosticUsage
 
 from q2galaxy.core.util import XMLNode
+from q2galaxy.core.templaters.helpers import signature_to_galaxy
 
 
 def collect_test_data(action, test_dir):
+    seen = set()
     for example in action.examples.values():
         use = TestDataUsage(write_dir=test_dir)
         example(use)
         for r in use.recorder:
             if r['source'] == 'init_data':
-                path = os.path.join(test_dir, r['ref'])
-                yield {'status': 'created', 'type': 'file', 'path': path}
+                path = os.path.join(test_dir, r['ref'] + '.qza')
+                if path not in seen:
+                    yield {'status': 'created', 'type': 'file', 'path': path}
+                    seen.add(path)
 
 
 class TestDataUsage(DiagnosticUsage):
@@ -34,7 +38,7 @@ class TestDataUsage(DiagnosticUsage):
 
     def _init_metadata_(self, ref, factory):
         super()._init_metadata_(ref, factory)
-        return self._init_helper(ref, factory, 'qza')
+        return self._init_helper(ref, factory, 'tsv')
 
 
 class TemplateTestUsage(TestDataUsage):
@@ -45,13 +49,11 @@ class TemplateTestUsage(TestDataUsage):
 
     def _make_params(self, action, input_opts):
         _, sig = action.get_action()
-        for param, argument in input_opts.items():
-            extras = {}
-            if param in sig.inputs:
-                extras = dict(ftype='qza')
-            param_xml = XMLNode('param', name=param, value=str(argument),
-                                **extras)
-            self.xml.append(param_xml)
+
+        for case in signature_to_galaxy(sig, input_opts):
+            test_xml = case.tests_xml()
+            if test_xml is not None:
+                self.xml.append(case.tests_xml())
 
     def _make_outputs(self, output_opts):
         for output_name, output in output_opts.items():
@@ -68,8 +70,15 @@ class TemplateTestUsage(TestDataUsage):
     def _assert_has_line_matching_(self, ref, label, path, expression):
         output = self._output_lookup[ref]
 
-        contents = XMLNode('assert_contents')
-        archive = XMLNode('has_archive_member', path=f'.*/data/{path}')
+        contents = output.find('assert_contents')
+        if contents is None:
+            contents = XMLNode('assert_contents')
+            output.append(contents)
+
+        path = f'.*/data/{path}'
+        archive = contents.find(f'has_archive_member[@path="{path}"]')
+        if archive is None:
+            archive = XMLNode('has_archive_member', path=path)
+            contents.append(archive)
+
         archive.append(XMLNode('has_line_matching', expression=expression))
-        contents.append(archive)
-        output.append(contents)

@@ -28,11 +28,6 @@ def _get_tool(action_id):
 
 def import_data(inputs, stdio):
     raise NotImplementedError("TODO")
-    # if input_format == 'None':
-    #     input_format = None
-    # artifact = qiime2.sdk.Artifact.import_data(type, input_path,
-    #                                            view_type=input_format)
-    # artifact.save('imported')
 
 
 def export_data(inputs, stdio):
@@ -58,6 +53,8 @@ def _export_get_args(inputs):
     else:
         output_format = qiime2.sdk.parse_format(output_format)
 
+    # TODO: Result.load will die if the format is unknown, there may be a
+    # better way to handle unkown /data/ directories
     result = qiime2.sdk.Result.load(input_)
 
     return output_format, result

@@ -15,6 +15,9 @@ stew: all
 tools: all
 	q2galaxy template all ./tests/
 
+builtins: all
+	q2galaxy template builtins ./tests/
+
 test: stew
 	planemo test --install_galaxy \
 	  --galaxy_branch qiime2 \
@@ -22,7 +25,7 @@ test: stew
 	  --no_conda_auto_install \
 	  --test_output ./tests/tool_test_output.html \
 	  --test_output_json ./tests/tool_test_output.json \
-	  ./tests/suite_q2_mystery_stew/
+	  ./tests/suite_qiime2_mystery-stew/
 
 install: all
 	$(PYTHON) setup.py install
