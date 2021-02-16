@@ -5,7 +5,7 @@ import qiime2.sdk as sdk
 
 from q2galaxy.core.util import get_mystery_stew
 from q2galaxy.core.drivers.stdio import (
-    error_handler, stdio_files, MISC_INFO_WIDTH, GALAXY_TRIMMED_STRING_LEN)
+    error_handler, stdio_files, GALAXY_TRIMMED_STRING_LEN)
 
 
 def action_runner(plugin_id, action_id, inputs):
@@ -66,9 +66,7 @@ def _convert_arguments(signature, inputs):
             else:
                 raise(e)
 
-        if v is None or v == 'None':
-            processed_inputs[k] = None
-        elif qiime2.sdk.util.is_collection_type(type_):
+        if qiime2.sdk.util.is_collection_type(type_):
 
             if type_.name == 'List':
                 if qiime2.sdk.util.is_metadata_type(type_):
@@ -96,7 +94,7 @@ def _convert_arguments(signature, inputs):
                 value = inputs[k]
 
             processed_inputs[k] = _convert_metadata(type_, value)
-        elif k in signature.inputs:
+        elif k in signature.inputs and v is not None:
             processed_inputs[k] = sdk.Artifact.load(v)
         else:
             processed_inputs[k] = v
@@ -115,9 +113,8 @@ def _execute_action(action, action_kwargs):
                 pretty_arg = ',\n'.join(str(a.uuid) for a in arg)
             else:
                 pretty_arg = ', '.join(repr(a) for a in arg)
-        line = f"{param}: {pretty_arg}"
-        print(line, file=sys.stdout, end=('\n\n' if len(line) > MISC_INFO_WIDTH
-                                          else '\n'))
+        line = f'｢{param}: {pretty_arg}｣'
+        print(line, file=sys.stdout)
     print(" " * GALAXY_TRIMMED_STRING_LEN)  # see _error_handler for rational
 
     return action(**action_kwargs)

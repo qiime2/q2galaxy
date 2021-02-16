@@ -40,7 +40,7 @@ def template_action_iter(plugin, action, directory):
 
 
 def template_plugin_iter(plugin, directory):
-    suite_name = f'suite_qiime2_{plugin.id}'
+    suite_name = f'suite_qiime2_{plugin.id.replace("_", "-")}'
     suite_dir = os.path.join(directory, suite_name, '')
 
     yield from _template_dir_iter(suite_dir)

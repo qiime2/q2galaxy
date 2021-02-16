@@ -1,4 +1,5 @@
 import io
+import hashlib
 
 import qiime2
 import qiime2.sdk as sdk
@@ -8,7 +9,9 @@ from q2galaxy.core.util import XMLNode
 
 
 def make_tool_id(plugin_id, action_id):
-    return '.'.join(['q2', plugin_id, action_id])
+    return '_'.join(['qiime2',
+                     plugin_id.replace('_', '-'),
+                     action_id.replace('_', '-')])
 
 
 def make_tool_name(plugin_name, action_id):
@@ -16,7 +19,7 @@ def make_tool_name(plugin_name, action_id):
 
 
 def make_tool_name_from_id(tool_id):
-    _, plugin, action = tool_id.split('.')
+    _, plugin, action = tool_id.split('_')
     return make_tool_name(plugin, action)
 
 
@@ -54,3 +57,13 @@ def make_requirements(conda_meta, project_name):
     requirements.append(XMLNode('requirement', 'q2galaxy',
                                 type='package', version=q2galaxy.__version__))
     return requirements
+
+
+def make_builtin_version(plugins):
+    env_hash = 0
+    for plugin in plugins:
+        env_hash ^= int.from_bytes(
+            hashlib.md5(f'{plugin.id}={plugin.version}'.encode()).digest(),
+            'big')
+    env_hash = env_hash.to_bytes(16, 'big').hex()[:8]  # use 4 bytes of hash
+    return f'{q2galaxy.__version__}+dist.h{env_hash}'
