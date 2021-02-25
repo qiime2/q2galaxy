@@ -50,7 +50,7 @@ jobs:
 
     # IF template all
     - name: publish template all
-      if: steps.template_all.outcome == "success"
+      if: steps.template_all.outcome == 'success'
       uses: actions/upload-artifact@v2
       with:
         name: template-all
@@ -68,24 +68,24 @@ jobs:
     # IF make test
     - name: rendered mystery-stew
       uses: actions/upload-artifact@v2
-      if: steps.make_test.outcome == "success"
+      if: steps.make_test.outcome == 'success'
       with:
         name: mystery-stew
         path: ${{ env.test_dist }}
     - name: html report
       uses: actions/upload-artifact@v2
-      if: steps.make_test.outcome == "success"
+      if: steps.make_test.outcome == 'success'
       with:
         name: html-report
         path: ${{ env.report_html }}
     - name: json report
       uses: actions/upload-artifact@v2
-      if: steps.make_test.outcome == "success"
+      if: steps.make_test.outcome == 'success'
       with:
         name: json-report
         path: ${{ env.report_json }}
       # END IF
 
     - name: The job has failed
-      if: steps.template_all.outcome == "failure"
+      if: steps.template_all.outcome == 'failure'
       run: exit 1
