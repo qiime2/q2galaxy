@@ -6,13 +6,13 @@ on:
   push:
     branches: [master]
 env:
-  rendered_dist: '../core-dist/'
+  rendered_dist: 'tests-template/core-dist/'
   test_dist: 'tests/suite_qiime2_mystery-stew'
   report_html: 'tests/tool_test_output.html'
   report_json: 'tests/tool_test_output.json'
 
 jobs:
-  make-env:
+  test-against-galaxy:
     runs-on: ubuntu-latest
     steps:
     - name: checkout source
@@ -86,6 +86,6 @@ jobs:
         path: ${{ env.report_json }}
       # END IF
 
-    - name: The job has failed
+    - name: Check for failure
       if: steps.template_all.outcome == 'failure'
       run: exit 1
