@@ -11,12 +11,15 @@ def collect_test_data(action, test_dir):
     for example in action.examples.values():
         use = TestDataUsage(write_dir=test_dir)
         example(use)
-        for r in use.recorder:
-            if r['source'] == 'init_data':
-                path = os.path.join(test_dir, r['ref'] + '.qza')
-                if path not in seen:
-                    yield {'status': 'created', 'type': 'file', 'path': path}
-                    seen.add(path)
+
+    return
+    yield
+        # for r in use.recorder:
+        #     if r['source'] == 'init_data':
+        #         path = os.path.join(test_dir, r['ref'] + '.qza')
+        #         if path not in seen:
+        #             yield {'status': 'created', 'type': 'file', 'path': path}
+        #             seen.add(path)
 
 
 class TestDataUsage(DiagnosticUsage):

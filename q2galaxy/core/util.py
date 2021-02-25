@@ -1,6 +1,7 @@
 import re
 import lxml.etree as xml
 import collections
+from q2_mystery_stew.plugin_setup import primitive_unions
 
 import qiime2
 import qiime2.sdk as sdk
@@ -80,7 +81,8 @@ def get_mystery_stew():
     pm = sdk.PluginManager(add_plugins=False)
 
     test_plugin = create_plugin(ints=True, strings=True, bools=True,
-                                floats=True)
+                                floats=True, artifacts=True,
+                                primitive_unions=True)
     pm.add_plugin(test_plugin)
 
     return pm.get_plugin(id='mystery_stew')
