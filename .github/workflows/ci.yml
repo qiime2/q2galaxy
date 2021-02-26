@@ -34,6 +34,7 @@ jobs:
           flake8
 
   test-against-galaxy:
+    needs: lint
     runs-on: ubuntu-latest
     steps:
     - name: checkout source
