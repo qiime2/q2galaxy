@@ -7,40 +7,33 @@ from q2galaxy.core.templaters.helpers import signature_to_galaxy
 
 
 def collect_test_data(action, test_dir):
-    seen = set()
     for example in action.examples.values():
         use = TestDataUsage(write_dir=test_dir)
         example(use)
-
-    return
-    yield
-        # for r in use.recorder:
-        #     if r['source'] == 'init_data':
-        #         path = os.path.join(test_dir, r['ref'] + '.qza')
-        #         if path not in seen:
-        #             yield {'status': 'created', 'type': 'file', 'path': path}
-        #             seen.add(path)
+        yield from use._created_files
 
 
 class TestDataUsage(DiagnosticUsage):
     def __init__(self, write_dir=None):
         super().__init__()
         self.write_dir = write_dir
+        self._created_files = []
 
     def _init_helper(self, ref, factory, ext):
         basename = '.'.join([ref, ext])
         if self.write_dir is not None:
             path = os.path.join(self.write_dir, basename)
+            if not os.path.exists(path):
+                self._created_files.append(
+                    {'status': 'created', 'type': 'file', 'path': path})
             factory().save(path)
 
         return basename
 
     def _init_data_(self, ref, factory):
-        super()._init_data_(ref, factory)
         return self._init_helper(ref, factory, 'qza')
 
     def _init_metadata_(self, ref, factory):
-        super()._init_metadata_(ref, factory)
         return self._init_helper(ref, factory, 'tsv')
 
 

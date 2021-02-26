@@ -1,7 +1,6 @@
 import re
 import lxml.etree as xml
 import collections
-from q2_mystery_stew.plugin_setup import primitive_unions
 
 import qiime2
 import qiime2.sdk as sdk
