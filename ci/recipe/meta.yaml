@@ -22,6 +22,7 @@ requirements:
     - qiime2 {{ release }}.*
     # Don't include this because it isn't available on staging yet.
     # - q2-mystery-stew {{ release }}.*
+    - click
     - lxml
 
 test:
