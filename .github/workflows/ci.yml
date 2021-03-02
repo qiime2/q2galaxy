@@ -42,8 +42,10 @@ jobs:
 
     - uses: actions/cache@v2
       with:
-        path: ~/.planemo/
-        key: days-since-accident-0
+        path: |
+          ~/.planemo/
+          ~/miniconda3/
+        key: days-since-accident-1
 
     - name: install QIIME 2 core distro
       run: |
@@ -86,26 +88,23 @@ jobs:
         conda activate ../test-env
         make test
 
-    # IF make test
     - name: rendered mystery-stew
       uses: actions/upload-artifact@v2
-      if: steps.make_test.outcome == 'success'
       with:
         name: mystery-stew
         path: ${{ env.test_dist }}
+
     - name: html report
       uses: actions/upload-artifact@v2
-      if: steps.make_test.outcome == 'success'
       with:
         name: html-report
         path: ${{ env.report_html }}
+
     - name: json report
       uses: actions/upload-artifact@v2
-      if: steps.make_test.outcome == 'success'
       with:
         name: json-report
         path: ${{ env.report_json }}
-      # END IF
 
     - name: Check for failure
       if: steps.template_all.outcome == 'failure'

@@ -34,7 +34,8 @@ dev: all
 	pip install -e .
 
 clean: distclean
-	rm -r ./tests/suite_*
+	rm -r ./rendered/tests/suite_*; \
+	rm -r ./rendered/tools/suite_*
 
 distclean: ;
 
