@@ -28,8 +28,9 @@ requirements:
 test:
   imports:
     - q2galaxy
-  commands:
-    - q2galaxy template tests $(mktemp -d)
+  # remove this test until q2-mystery-stew is available
+  # commands:
+  #   - q2galaxy template tests $(mktemp -d)
 
 
 about:
