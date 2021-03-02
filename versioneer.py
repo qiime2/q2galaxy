@@ -1,5 +1,6 @@
 
 # Version: 0.19
+# flake8: noqa
 
 """The Versioneer - like a rocketeer, but for versions.
 
