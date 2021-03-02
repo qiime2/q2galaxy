@@ -20,7 +20,8 @@ requirements:
   run:
     - python  {{ python }}
     - qiime2 {{ release }}.*
-    - q2-mystery-stew {{ release }}.*
+    # Don't include this because it isn't available on staging yet.
+    # - q2-mystery-stew {{ release }}.*
     - lxml
 
 test:
