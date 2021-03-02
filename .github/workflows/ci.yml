@@ -6,10 +6,10 @@ on:
   push:
     branches: [master]
 env:
-  rendered_dist: 'tests-template/core-dist/'
-  test_dist: 'tests/suite_qiime2_mystery-stew'
-  report_html: 'tests/tool_test_output.html'
-  report_json: 'tests/tool_test_output.json'
+  rendered_dist: 'rendered/tools/'
+  test_dist: 'rendered/tests/suite_qiime2_mystery-stew'
+  report_html: 'rendered/tests/tool_test_output.html'
+  report_json: 'rendered/tests/tool_test_output.json'
 
 jobs:
   lint:
@@ -42,8 +42,10 @@ jobs:
 
     - uses: actions/cache@v2
       with:
-        path: ~/.planemo/
-        key: days-since-accident-0
+        path: |
+          ~/.planemo/
+          ~/miniconda3/
+        key: days-since-accident-1
 
     - name: install QIIME 2 core distro
       run: |
@@ -67,8 +69,7 @@ jobs:
       run: |
         source "$CONDA/etc/profile.d/conda.sh"
         conda activate ../test-env
-        mkdir -p ${{ env.rendered_dist }}
-        q2galaxy template all ${{ env.rendered_dist }}
+        make tools
 
     # IF template all
     - name: publish template all
@@ -87,27 +88,45 @@ jobs:
         conda activate ../test-env
         make test
 
-    # IF make test
     - name: rendered mystery-stew
       uses: actions/upload-artifact@v2
-      if: steps.make_test.outcome == 'success'
       with:
         name: mystery-stew
         path: ${{ env.test_dist }}
+
     - name: html report
       uses: actions/upload-artifact@v2
-      if: steps.make_test.outcome == 'success'
       with:
         name: html-report
         path: ${{ env.report_html }}
+
     - name: json report
       uses: actions/upload-artifact@v2
-      if: steps.make_test.outcome == 'success'
       with:
         name: json-report
         path: ${{ env.report_json }}
-      # END IF
 
     - name: Check for failure
       if: steps.template_all.outcome == 'failure'
       run: exit 1
+
+  build-conda-package:
+    needs: test-against-galaxy
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: checkout source
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: set up git repo for versioneer
+      run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+
+    - uses: qiime2/action-library-packaging@alpha1
+      with:
+        package-name: q2galaxy
+        build-target: staging
+        library-token: ${{ secrets.LIBRARY_TOKEN }}
