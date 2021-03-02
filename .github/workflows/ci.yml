@@ -6,10 +6,10 @@ on:
   push:
     branches: [master]
 env:
-  rendered_dist: 'tests-template/core-dist/'
-  test_dist: 'tests/suite_qiime2_mystery-stew'
-  report_html: 'tests/tool_test_output.html'
-  report_json: 'tests/tool_test_output.json'
+  rendered_dist: 'rendered/tools/'
+  test_dist: 'rendered/tests/suite_qiime2_mystery-stew'
+  report_html: 'rendered/tests/tool_test_output.html'
+  report_json: 'rendered/tests/tool_test_output.json'
 
 jobs:
   lint:
@@ -67,8 +67,7 @@ jobs:
       run: |
         source "$CONDA/etc/profile.d/conda.sh"
         conda activate ../test-env
-        mkdir -p ${{ env.rendered_dist }}
-        q2galaxy template all ${{ env.rendered_dist }}
+        make tools
 
     # IF template all
     - name: publish template all
@@ -111,3 +110,24 @@ jobs:
     - name: Check for failure
       if: steps.template_all.outcome == 'failure'
       run: exit 1
+
+  build-conda-package:
+    needs: test-against-galaxy
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: checkout source
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: set up git repo for versioneer
+      run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+
+    - uses: qiime2/action-library-packaging@alpha1
+      with:
+        package-name: q2galaxy
+        build-target: staging
+        library-token: ${{ secrets.LIBRARY_TOKEN }}

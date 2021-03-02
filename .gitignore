@@ -128,5 +128,7 @@ tags
 
 # End of https://www.gitignore.io/api/vim,python
 
-tests/**
-!tests/README.md
+rendered/tests/**
+!rendered/tests/README.md
+rendered/tools/**
+!rendered/tools/README.md
