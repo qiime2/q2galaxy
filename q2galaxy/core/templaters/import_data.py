@@ -81,9 +81,8 @@ def make_builtin_import(meta, tool_id):
     tool.append(
         XMLNode('command', "q2galaxy run builtin import_data '$inputs'"))
     tool.append(_make_config())
-    tool.append(XMLNode('description', 'Import data to Qiime2 artifacts'))
-    tool.append(XMLNode('help', 'This method allows for the importing of '
-                        'external data into Qiime2 artifacts.'))
+    tool.append(XMLNode('description', 'Import data into QIIME 2 artifacts'))
+    tool.append(XMLNode('help', ''))
     return tool
 
 

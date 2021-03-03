@@ -8,6 +8,7 @@
 import re
 import lxml.etree as xml
 import collections
+from datetime import datetime
 
 import qiime2
 import qiime2.sdk as sdk
@@ -197,8 +198,8 @@ def rst_header(header, level):
     return '\n'.join(['', header, fill * len(header), ''])
 
 
-COPYRIGHT = """
-Copyright (c) 2021, QIIME 2 development team.
+COPYRIGHT = f"""
+Copyright (c) {datetime.now().year}, QIIME 2 development team.
 
 Distributed under the terms of the Modified BSD License. (SPDX: BSD-3-Clause)
 """

@@ -11,7 +11,8 @@ from qiime2.sdk.plugin_manager import GetFormatFilters
 
 from q2galaxy.core.util import XMLNode, galaxy_esc, pretty_fmt_name
 from q2galaxy.core.templaters.common import (
-    make_builtin_version, make_tool_name_from_id, make_config)
+    make_builtin_version, make_requirements, make_tool_name_from_id,
+    make_config)
 
 
 def make_builtin_export(meta, tool_id):
@@ -161,14 +162,13 @@ def make_builtin_export(meta, tool_id):
 
     tool = XMLNode('tool', id=tool_id, name=make_tool_name_from_id(tool_id),
                    version=make_builtin_version(plugins))
-    tool.append(XMLNode('description', 'Export data from Qiime2 artifacts'))
+    tool.append(XMLNode('description', 'Export data from QIIME 2 artifacts'))
     tool.append(XMLNode('command', "q2galaxy run tools export '$inputs'"))
     tool.append(make_config())
     tool.append(inputs)
     tool.append(outputs)
-    tool.append(XMLNode('help', 'This method allows for the exporting of data '
-                        'contained in Qiime2 artifacts to external '
-                        'directories'))
+    tool.append(make_requirements(meta, *[p.project_name for p in plugins]))
+    tool.append(XMLNode('help', ''))
 
     return tool
 
