@@ -50,7 +50,8 @@ def template_plugin_iter(plugin, directory):
     suite_name = f'suite_qiime2_{plugin.id.replace("_", "-")}'
     suite_dir = os.path.join(directory, suite_name, '')
 
-    yield from _template_dir_iter(suite_dir)
+    if plugin.actions:
+        yield from _template_dir_iter(suite_dir)
     for action in plugin.actions.values():
         yield from template_action_iter(plugin, action, suite_dir)
 

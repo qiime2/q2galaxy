@@ -11,6 +11,8 @@ source:
 
 build:
   script: make install
+  entry_points:
+  - q2galaxy=q2galaxy.__main__:root
 
 requirements:
   host:

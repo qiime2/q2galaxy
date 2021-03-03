@@ -37,19 +37,21 @@ class CondaMeta:
             return
         yield from (dep.split(' ')[0] for dep in self[package]['depends'])
 
-    def iter_deps(self, package, *, include_self=True, _seen=None):
+    def iter_deps(self, *packages, include_self=True, _seen=None):
         if _seen is None:
             _seen = set()
 
         if include_self:
-            yield package, self.get_version(package)
+            for package in packages:
+                yield package, self.get_version(package)
 
-        for dependency in self.iter_primary_deps(package):
-            if dependency in _seen:
-                continue
-            else:
-                _seen.add(dependency)
-                yield from self.iter_deps(dependency, _seen=_seen)
+        for package in packages:
+            for dependency in self.iter_primary_deps(package):
+                if dependency in _seen:
+                    continue
+                else:
+                    _seen.add(dependency)
+                    yield from self.iter_deps(dependency, _seen=_seen)
 
     def get_version(self, package):
         if package not in self.meta_lookup:
