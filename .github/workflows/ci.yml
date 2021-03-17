@@ -58,7 +58,7 @@ jobs:
       run: |
         source "$CONDA/etc/profile.d/conda.sh"
         conda activate ../test-env
-        conda install -c https://packages.qiime2.org/qiime2/unverified/ -c conda-forge -c bioconda -c defaults q2-mystery-stew
+        conda install -c https://packages.qiime2.org/qiime2/latest/tested/ -c conda-forge -c bioconda -c defaults q2-mystery-stew
         pip install planemo
         make dev
 
