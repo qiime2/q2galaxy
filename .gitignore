@@ -132,3 +132,7 @@ rendered/tests/**
 !rendered/tests/README.md
 rendered/tools/**
 !rendered/tools/README.md
+
+__tmp*/
+docker/qiime2-*-conda.yml
+docker/tools/
