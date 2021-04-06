@@ -9,6 +9,7 @@ import itertools
 from qiime2.sdk.util import (interrogate_collection_type, is_semantic_type,
                              is_union)
 from qiime2.plugin import Choices
+from qiime2.core.type.signature import ParameterSpec
 
 from q2galaxy.core.util import XMLNode, galaxy_esc, galaxy_ui_var
 
@@ -22,36 +23,40 @@ def signature_to_galaxy(signature, arguments=None):
             continue
         else:
             arg = arguments[name]
-        is_input = is_semantic_type(spec.qiime_type)
-        style = interrogate_collection_type(spec.qiime_type)
-        if style.style is None:  # not a collection
-            if is_input:
-                yield InputCase(name, spec, arg)
-            else:
-                if is_union(spec.qiime_type) or (
-                        spec.qiime_type.predicate is not None
-                        and is_union(spec.qiime_type.predicate)):
-                    yield PrimitiveUnionCase(name, spec, arg)
-                else:  # simple parameter
-                    if spec.qiime_type.name.startswith('Metadata'):
-                        yield NotImplementedCase(name, spec, arg)
-                    elif spec.qiime_type.name == 'Bool':
-                        yield BoolCase(name, spec, arg)
-                    elif spec.qiime_type.name == 'Str':
-                        yield StrCase(name, spec, arg)
-                    else:
-                        yield NumericCase(name, spec, arg)
+        yield identify_arg_case(name, spec, arg)
 
-        elif style.style == 'simple':  # single type collection
-            yield NotImplementedCase(name, spec, arg)
-        elif style.style == 'monomorphic':  # multiple types, but monomorphic
-            yield NotImplementedCase(name, spec, arg)
-        elif style.style == 'composite':  # multiple types, but polymorphic
-            yield NotImplementedCase(name, spec, arg)
-        elif style.style == 'complex':  # oof
-            yield NotImplementedCase(name, spec, arg)
+
+def identify_arg_case(name, spec, arg):
+    is_input = is_semantic_type(spec.qiime_type)
+    style = interrogate_collection_type(spec.qiime_type)
+    if style.style is None:  # not a collection
+        if is_input:
+            return InputCase(name, spec, arg)
         else:
-            raise NotImplementedError
+            if is_union(spec.qiime_type) or (
+                    spec.qiime_type.predicate is not None
+                    and is_union(spec.qiime_type.predicate)):
+                return PrimitiveUnionCase(name, spec, arg)
+            else:  # simple parameter
+                if spec.qiime_type.name.startswith('Metadata'):
+                    return NotImplementedCase(name, spec, arg)
+                elif spec.qiime_type.name == 'Bool':
+                    return BoolCase(name, spec, arg)
+                elif spec.qiime_type.name == 'Str':
+                    return StrCase(name, spec, arg)
+                else:
+                    return NumericCase(name, spec, arg)
+
+    elif style.style == 'simple':  # single type collection
+        return SimpleCollectionCase(name, spec, arg)
+    elif style.style == 'monomorphic':  # multiple types, but monomorphic
+        return NotImplementedCase(name, spec, arg)
+    elif style.style == 'composite':  # multiple types, but polymorphic
+        return NotImplementedCase(name, spec, arg)
+    elif style.style == 'complex':  # oof
+        return NotImplementedCase(name, spec, arg)
+    else:
+        raise NotImplementedError
 
 
 class ParamCase:
@@ -422,6 +427,36 @@ class PrimitiveUnionCase(ParamCase):
         conditional.append(select)
         conditional.append(param)
         return conditional
+
+
+class SimpleCollectionCase(ParamCase):
+    def __init__(self, name, spec, arg=None):
+        super().__init__(name, spec, arg)
+
+        # If we have a simple collection, we only have a single field
+        self.inner_type = spec.qiime_type.fields[0]
+        self.inner_spec = ParameterSpec(self.inner_type, spec.view_type)
+
+    def inputs_xml(self):
+        root = XMLNode('repeat', name=self.name, title=self.name)
+        self.add_help(root)
+
+        to_repeat = identify_arg_case('value', self.inner_spec, self.arg)
+        root.append(to_repeat.inputs_xml())
+
+        return root
+
+    def tests_xml(self):
+        roots = []
+
+        if self.arg is not None:
+            for idx, arg in enumerate(self.arg):
+                root = XMLNode('repeat', name=self.name)
+                to_repeat = identify_arg_case('value', self.inner_spec, arg)
+                root.append(to_repeat.tests_xml())
+                roots.append(root)
+
+        return roots
 
 
 def make_optional(param):

@@ -79,7 +79,6 @@ def tests(ctx, output):
 def run(plugin, action, inputs):
     with open(inputs, 'r') as fh:
         config = _clean_inputs(json.load(fh))
-
     if plugin == 'tools':
         builtin_runner(action, config)
     else:
@@ -89,6 +88,14 @@ def run(plugin, action, inputs):
 def _clean_inputs(inputs):
     cleaned = {}
     for key, value in inputs.items():
+        if type(value) is list:
+            input_ = []
+
+            for elem in inputs[key]:
+                input_.extend(_clean_inputs(elem).values())
+
+            cleaned[key] = input_
+            continue
         # smash together nested dictionaries which are a consequence of
         # UI nesting
         if key.startswith(galaxy_ui_var()):

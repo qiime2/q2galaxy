@@ -55,8 +55,12 @@ class TemplateTestUsage(TestDataUsage):
 
         for case in signature_to_galaxy(sig, input_opts):
             test_xml = case.tests_xml()
-            if test_xml is not None:
-                self.xml.append(case.tests_xml())
+            if type(test_xml) is not list:
+                test_xml = [test_xml]
+
+            for test_node in test_xml:
+                if test_node is not None:
+                    self.xml.append(test_node)
 
     def _make_outputs(self, output_opts):
         for output_name, output in output_opts.items():

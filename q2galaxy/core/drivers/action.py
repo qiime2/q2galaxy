@@ -80,6 +80,8 @@ def _convert_arguments(signature, inputs):
                     new_list = [_convert_metadata(type_, v) for v in inputs[k]]
                 elif k in signature.inputs:
                     new_list = [sdk.Artifact.load(v) for v in inputs[k]]
+                elif v == []:
+                    new_list = signature.parameters[k].default
                 else:
                     new_list = inputs[k]
 
@@ -90,6 +92,8 @@ def _convert_arguments(signature, inputs):
                         set(_convert_metadata(type_, v) for v in inputs[k])
                 elif k in signature.inputs:
                     new_set = set(sdk.Artifact.load(v) for v in inputs[k])
+                elif v == []:
+                    new_set = signature.parameters[k].default
                 else:
                     new_set = set(inputs[k])
 
