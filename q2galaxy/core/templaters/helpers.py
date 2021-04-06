@@ -52,7 +52,7 @@ def identify_arg_case(name, spec, arg):
     elif style.style == 'monomorphic':  # multiple types, but monomorphic
         return NotImplementedCase(name, spec, arg)
     elif style.style == 'composite':  # multiple types, but polymorphic
-        return NotImplementedCase(name, spec, arg)
+        return SimpleCollectionCase(name, spec, arg)
     elif style.style == 'complex':  # oof
         return NotImplementedCase(name, spec, arg)
     else:
@@ -438,18 +438,28 @@ class SimpleCollectionCase(ParamCase):
         self.inner_spec = ParameterSpec(self.inner_type, spec.view_type)
 
     def inputs_xml(self):
-        root = XMLNode('repeat', name=self.name, title=self.name)
-        self.add_help(root)
+        if is_semantic_type(self.inner_type):
+            root = InputCase.inputs_xml(self)
+            root.set('multiple', 'true')
+        else:
+            root = XMLNode('repeat', name=self.name, title=self.name)
+            self.add_help(root)
 
-        to_repeat = identify_arg_case('value', self.inner_spec, self.arg)
-        root.append(to_repeat.inputs_xml())
+            to_repeat = identify_arg_case('value', self.inner_spec, self.arg)
+            root.append(to_repeat.inputs_xml())
 
         return root
 
     def tests_xml(self):
         roots = []
 
-        if self.arg is not None:
+        # aritfacts do not need repeat block, maybe selects too
+        if is_semantic_type(self.inner_type):
+            if self.arg is None:
+                return
+            arg = ','.join(self.arg)
+            return XMLNode('param', name=self.name, value=arg, ftype='qza')
+        else:
             for idx, arg in enumerate(self.arg):
                 root = XMLNode('repeat', name=self.name)
                 to_repeat = identify_arg_case('value', self.inner_spec, arg)
