@@ -7,7 +7,8 @@
 # ----------------------------------------------------------------------------
 import itertools
 from qiime2.sdk.util import (interrogate_collection_type, is_semantic_type,
-                             is_union)
+                             is_union, is_metadata_type,
+                             is_metadata_column_type)
 from qiime2.plugin import Choices
 
 from q2galaxy.core.util import XMLNode, galaxy_esc, galaxy_ui_var
@@ -33,8 +34,11 @@ def signature_to_galaxy(signature, arguments=None):
                         and is_union(spec.qiime_type.predicate)):
                     yield PrimitiveUnionCase(name, spec, arg)
                 else:  # simple parameter
-                    if spec.qiime_type.name.startswith('Metadata'):
-                        yield NotImplementedCase(name, spec, arg)
+                    if is_metadata_type(spec.qiime_type):
+                        if is_metadata_column_type(spec.qiime_type):
+                            yield ColumnTabularCase(name, spec, arg)
+                        else:
+                            yield MetadataTabularCase(name, spec, arg)
                     elif spec.qiime_type.name == 'Bool':
                         yield BoolCase(name, spec, arg)
                     elif spec.qiime_type.name == 'Str':
@@ -108,6 +112,50 @@ class NotImplementedCase(ParamCase):
 
     def tests_xml(self):
         return XMLNode("param", name=self.name, value=str(self.arg))
+
+
+class MetadataTabularCase(ParamCase):
+    def inputs_xml(self):
+        param = XMLNode('param', type='data', format='tabular', name=self.name)
+        self.add_help(param)
+        self.add_default(param)
+        self.add_label(param)
+
+        return param
+
+    def tests_xml(self):
+        if self.arg is None:
+            return
+        arg = str(self.arg)
+        return XMLNode('param', name=self.name, value=arg, ftype='tabular')
+
+
+class ColumnTabularCase(MetadataTabularCase):
+    def inputs_xml(self):
+        file_ref = self.name + '_source_data'
+        param1 = XMLNode('param', type='data', format='tabular',
+                         name=file_ref)
+        self.add_label(param1)
+        self.add_default(param1)
+
+        param2 = XMLNode('param', type='data_column', use_header_names='true',
+                         data_ref=file_ref, name=self.name, label=' ')
+        self.add_help(param2)
+        self.add_default(param2)
+
+        param2.append(XMLNode('validator', 'value != "1"', type='expression',
+                             message='The first column cannot be selected ('
+                                     'they are IDs).'))
+
+        return [param1, param2]
+
+    def tests_xml(self):
+        if self.arg is None:
+            return
+        md_file, column_number = self.arg
+        return [XMLNode('param', name=self.name + '_source_data',
+                        value=md_file, ftype='tabular'),
+                XMLNode('param', name=self.name, value=column_number)]
 
 
 class InputCase(ParamCase):

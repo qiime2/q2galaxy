@@ -68,7 +68,7 @@ def _convert_arguments(signature, inputs):
         # accept the column specifier won't be in the signature and should be
         # skipped
         except KeyError as e:
-            if '_Column' in str(e):
+            if '_source_data' in str(e):
                 continue
             else:
                 raise(e)
@@ -96,7 +96,7 @@ def _convert_arguments(signature, inputs):
                 processed_inputs[k] = new_set
         elif qiime2.sdk.util.is_metadata_type(type_):
             if type_.name == 'MetadataColumn':
-                value = (inputs[k], inputs[f'{k}_Column'])
+                value = (inputs[f'{k}_source_data'], inputs[k])
             else:
                 value = inputs[k]
 
@@ -115,6 +115,8 @@ def _execute_action(action, action_kwargs):
         pretty_arg = repr(arg)
         if isinstance(arg, qiime2.sdk.Result):
             pretty_arg = str(arg.uuid)
+        elif isinstance(arg, qiime2.Metadata):
+            pretty_arg = "<Metadata>"
         elif isinstance(arg, list):
             if len(arg) > 0 and isinstance(arg[0], qiime2.sdk.Result):
                 pretty_arg = ',\n'.join(str(a.uuid) for a in arg)
@@ -137,7 +139,14 @@ def _save_results(results):
 def _convert_metadata(input_, value):
     if input_.name == 'MetadataColumn':
         value, column = value
+        # Galaxy writes data_columns as lists in the JSON for reasons I assume.
+        column, = column
+        if column is None:
+            return None
     fp = value
+
+    if fp is None:
+        return None
 
     try:
         artifact = qiime2.Artifact.load(fp)
@@ -158,6 +167,8 @@ def _convert_metadata(input_, value):
         return metadata
     else:
         try:
+            # galaxy is 1-indexed and includes the ID column, so subtract 2
+            column = list(metadata.columns.keys())[int(column) - 2]
             metadata_column = metadata.get_column(column)
         except Exception:
             raise ValueError("There was an issue with retrieving column %r "

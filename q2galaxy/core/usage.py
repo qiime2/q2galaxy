@@ -7,6 +7,7 @@
 # ----------------------------------------------------------------------------
 import os
 
+import qiime2
 from qiime2.sdk.usage import DiagnosticUsage
 
 from q2galaxy.core.util import XMLNode
@@ -25,14 +26,17 @@ class TestDataUsage(DiagnosticUsage):
         super().__init__()
         self.write_dir = write_dir
         self._created_files = []
+        self._factories = {}
 
     def _init_helper(self, ref, factory, ext):
         basename = '.'.join([ref, ext])
+        self._factories[ref] = factory
         if self.write_dir is not None:
             path = os.path.join(self.write_dir, basename)
             if not os.path.exists(path):
                 self._created_files.append(
                     {'status': 'created', 'type': 'file', 'path': path})
+
             factory().save(path)
 
         return basename
@@ -55,8 +59,12 @@ class TemplateTestUsage(TestDataUsage):
 
         for case in signature_to_galaxy(sig, input_opts):
             test_xml = case.tests_xml()
-            if test_xml is not None:
-                self.xml.append(case.tests_xml())
+            if test_xml is None:
+                continue
+            if type(test_xml) is not list:
+                test_xml = [test_xml]
+            for xml in test_xml:
+                self.xml.append(xml)
 
     def _make_outputs(self, output_opts):
         for output_name, output in output_opts.items():
@@ -69,6 +77,13 @@ class TemplateTestUsage(TestDataUsage):
         self._make_outputs(output_opts)
 
         return super()._action_(action, input_opts, output_opts)
+
+    def _get_metadata_column_(self, column_name, record):
+        if record.result is None:
+            return None
+        md = self._factories[record.ref]()
+        column = str(list(md.columns.keys()).index(column_name) + 2)
+        return (record.result, column)
 
     def _assert_has_line_matching_(self, ref, label, path, expression):
         output = self._output_lookup[ref]
