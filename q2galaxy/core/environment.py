@@ -35,7 +35,11 @@ class CondaMeta:
     def iter_primary_deps(self, package):
         if package not in self.meta_lookup:
             return
-        yield from (dep.split(' ')[0] for dep in self[package]['depends'])
+        yield from (dep.split(' ')[0] for dep in self[package]['depends']
+                    # Ignore conda "virtual packages"
+                    # https://conda.io/projects/conda/en/latest
+                    # /user-guide/tasks/manage-virtual.html
+                    if not dep.startswith('__'))
 
     def iter_deps(self, *packages, include_self=True, _seen=None):
         if _seen is None:
