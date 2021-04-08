@@ -127,5 +127,5 @@ jobs:
     - uses: qiime2/action-library-packaging@alpha1
       with:
         package-name: q2galaxy
-        build-target: staging
+        build-target: staged
         library-token: ${{ secrets.LIBRARY_TOKEN }}
