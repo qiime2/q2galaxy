@@ -7,7 +7,6 @@
 # ----------------------------------------------------------------------------
 import os
 
-import qiime2
 from qiime2.sdk.usage import DiagnosticUsage
 
 from q2galaxy.core.util import XMLNode

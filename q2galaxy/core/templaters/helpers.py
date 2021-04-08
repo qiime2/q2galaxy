@@ -144,8 +144,8 @@ class ColumnTabularCase(MetadataTabularCase):
         self.add_default(param2)
 
         param2.append(XMLNode('validator', 'value != "1"', type='expression',
-                             message='The first column cannot be selected ('
-                                     'they are IDs).'))
+                              message='The first column cannot be selected ('
+                                      'they are IDs).'))
 
         return [param1, param2]
 
