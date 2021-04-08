@@ -47,7 +47,8 @@ class CondaMeta:
 
         for package in packages:
             for dependency in self.iter_primary_deps(package):
-                if dependency in _seen:
+                # __glibc isn't a "real" package, there may be others like it
+                if dependency in _seen or dependency.startswith('__'):
                     continue
                 else:
                     _seen.add(dependency)
