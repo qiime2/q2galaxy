@@ -23,6 +23,7 @@ test: stew
 	  --galaxy_branch qiime2 \
 	  --galaxy_source https://github.com/ebolyen/galaxy.git \
 	  --no_conda_auto_install \
+	  ---no_conda_auto_init \
 	  --test_output ./rendered/tests/tool_test_output.html \
 	  --test_output_json ./rendered/tests/tool_test_output.json \
 	  ./rendered/tests/suite_qiime2_mystery-stew/
