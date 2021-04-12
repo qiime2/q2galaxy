@@ -59,6 +59,7 @@ jobs:
         source "$CONDA/etc/profile.d/conda.sh"
         conda activate ../test-env
         pip install planemo
+        conda uninstall -y q2galaxy
         make dev
 
     - name: template all
