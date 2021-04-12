@@ -16,4 +16,5 @@ setup(
     license='BSD-3-Clause',
     packages=find_packages(),
     entry_points={
-        'console_scripts': ['q2galaxy=q2galaxy.__main__:root']})
+        'console_scripts': ['q2galaxy=q2galaxy.__main__:root']},
+    zip_safe=False)
