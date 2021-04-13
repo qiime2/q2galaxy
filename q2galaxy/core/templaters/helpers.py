@@ -7,7 +7,8 @@
 # ----------------------------------------------------------------------------
 import itertools
 from qiime2.sdk.util import (interrogate_collection_type, is_semantic_type,
-                             is_union)
+                             is_union, is_metadata_type,
+                             is_metadata_column_type)
 from qiime2.plugin import Choices
 from qiime2.core.type.signature import ParameterSpec
 
@@ -26,26 +27,32 @@ def signature_to_galaxy(signature, arguments=None):
         yield identify_arg_case(name, spec, arg)
 
 
+def is_union_anywhere(qiime_type):
+    return is_union(qiime_type) or (
+        qiime_type.predicate is not None and is_union(qiime_type.predicate))
+
+
 def identify_arg_case(name, spec, arg):
-    is_input = is_semantic_type(spec.qiime_type)
     style = interrogate_collection_type(spec.qiime_type)
+
+    if is_semantic_type(spec.qiime_type):
+        return InputCase(name, spec, arg,
+                         multiple=style.style is not None)
+
     if style.style is None:  # not a collection
-        if is_input:
-            return InputCase(name, spec, arg)
+        if is_union_anywhere(spec.qiime_type):
+            return PrimitiveUnionCase(name, spec, arg)
+        elif is_metadata_type(spec.qiime_type):
+            if is_metadata_column_type(spec.qiime_type):
+                return ColumnTabularCase(name, spec, arg)
+            else:
+                return MetadataTabularCase(name, spec, arg)
+        elif spec.qiime_type.name == 'Bool':
+            return BoolCase(name, spec, arg)
+        elif spec.qiime_type.name == 'Str':
+            return StrCase(name, spec, arg)
         else:
-            if is_union(spec.qiime_type) or (
-                    spec.qiime_type.predicate is not None
-                    and is_union(spec.qiime_type.predicate)):
-                return PrimitiveUnionCase(name, spec, arg)
-            else:  # simple parameter
-                if spec.qiime_type.name.startswith('Metadata'):
-                    return NotImplementedCase(name, spec, arg)
-                elif spec.qiime_type.name == 'Bool':
-                    return BoolCase(name, spec, arg)
-                elif spec.qiime_type.name == 'Str':
-                    return StrCase(name, spec, arg)
-                else:
-                    return NumericCase(name, spec, arg)
+            return NumericCase(name, spec, arg)
 
     elif style.style == 'simple':  # single type collection
         return SimpleCollectionCase(name, spec, arg)
@@ -55,8 +62,8 @@ def identify_arg_case(name, spec, arg):
         return SimpleCollectionCase(name, spec, arg)
     elif style.style == 'complex':  # oof
         return NotImplementedCase(name, spec, arg)
-    else:
-        raise NotImplementedError
+
+    raise NotImplementedError
 
 
 class ParamCase:
@@ -115,12 +122,62 @@ class NotImplementedCase(ParamCase):
         return XMLNode("param", name=self.name, value=str(self.arg))
 
 
+class MetadataTabularCase(ParamCase):
+    def inputs_xml(self):
+        param = XMLNode('param', type='data', format='tabular', name=self.name)
+        self.add_help(param)
+        self.add_default(param)
+        self.add_label(param)
+
+        return param
+
+    def tests_xml(self):
+        if self.arg is None:
+            return
+        arg = str(self.arg)
+        return XMLNode('param', name=self.name, value=arg, ftype='tabular')
+
+
+class ColumnTabularCase(MetadataTabularCase):
+    def inputs_xml(self):
+        file_ref = self.name + '_source_data'
+        param1 = XMLNode('param', type='data', format='tabular',
+                         name=file_ref)
+        self.add_label(param1)
+        self.add_default(param1)
+
+        param2 = XMLNode('param', type='data_column', use_header_names='true',
+                         data_ref=file_ref, name=self.name, label=' ')
+        self.add_help(param2)
+        self.add_default(param2)
+
+        param2.append(XMLNode('validator', 'value != "1"', type='expression',
+                              message='The first column cannot be selected ('
+                                      'they are IDs).'))
+
+        return [param1, param2]
+
+    def tests_xml(self):
+        if self.arg is None:
+            return
+        md_file, column_number = self.arg
+        return [XMLNode('param', name=self.name + '_source_data',
+                        value=md_file, ftype='tabular'),
+                XMLNode('param', name=self.name, value=column_number)]
+
+
 class InputCase(ParamCase):
+    def __init__(self, name, spec, arg=None, multiple=False):
+        super().__init__(name, spec, arg)
+        self.multiple = multiple
+
     def inputs_xml(self):
         param = XMLNode('param', type='data', format='qza', name=self.name)
         self.add_help(param)
         self.add_default(param)
         self.add_label(param)
+        if self.multiple:
+            param.set('multiple', 'true')
 
         options = XMLNode('options',
                           options_filter_attribute='metadata.semantic_type')
@@ -144,7 +201,10 @@ class InputCase(ParamCase):
     def tests_xml(self):
         if self.arg is None:
             return
-        arg = str(self.arg)
+        if self.multiple:
+            arg = ','.join(map(str, self.arg))
+        else:
+            arg = str(self.arg)
         return XMLNode('param', name=self.name, value=arg, ftype='qza')
 
 
@@ -438,33 +498,25 @@ class SimpleCollectionCase(ParamCase):
         self.inner_spec = ParameterSpec(self.inner_type, spec.view_type)
 
     def inputs_xml(self):
-        if is_semantic_type(self.inner_type):
-            root = InputCase.inputs_xml(self)
-            root.set('multiple', 'true')
-        else:
-            root = XMLNode('repeat', name=self.name, title=self.name)
-            self.add_help(root)
+        root = XMLNode('repeat', name=self.name, title=self.name)
+        self.add_help(root)
 
-            to_repeat = identify_arg_case('value', self.inner_spec, self.arg)
-            root.append(to_repeat.inputs_xml())
+        to_repeat = identify_arg_case('value', self.inner_spec, self.arg)
+        root.append(to_repeat.inputs_xml())
 
         return root
 
     def tests_xml(self):
         roots = []
 
-        # aritfacts do not need repeat block, maybe selects too
-        if is_semantic_type(self.inner_type):
-            if self.arg is None:
-                return
-            arg = ','.join(self.arg)
-            return XMLNode('param', name=self.name, value=arg, ftype='qza')
-        else:
-            for idx, arg in enumerate(self.arg):
-                root = XMLNode('repeat', name=self.name)
-                to_repeat = identify_arg_case('value', self.inner_spec, arg)
-                root.append(to_repeat.tests_xml())
-                roots.append(root)
+        if self.arg is None:
+            return None
+
+        for idx, arg in enumerate(self.arg):
+            root = XMLNode('repeat', name=self.name)
+            to_repeat = identify_arg_case('value', self.inner_spec, arg)
+            root.append(to_repeat.tests_xml())
+            roots.append(root)
 
         return roots
 

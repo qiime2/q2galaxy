@@ -22,10 +22,17 @@ def make_tool(conda_meta, plugin, action):
     inputs = XMLNode('inputs')
     advanced = []
     for case in signature_to_galaxy(signature):
+        xml = case.inputs_xml()
         if case.is_advanced():
-            advanced.append(case.inputs_xml())
+            if type(xml) is list:
+                advanced.extend(xml)
+            else:
+                advanced.append(xml)
         else:
-            inputs.append(case.inputs_xml())
+            if type(xml) is list:
+                inputs.extend(xml)
+            else:
+                inputs.append(xml)
 
     if advanced:
         section = XMLNode('section', name=galaxy_ui_var(tag='section',
