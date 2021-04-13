@@ -171,6 +171,10 @@ class InputCase(ParamCase):
         super().__init__(name, spec, arg)
         self.multiple = multiple
 
+        self.qiime_type = spec.qiime_type
+        if multiple:
+            self.qiime_type = spec.qiime_type.fields[0]
+
     def inputs_xml(self):
         param = XMLNode('param', type='data', format='qza', name=self.name)
         self.add_help(param)
@@ -181,16 +185,17 @@ class InputCase(ParamCase):
 
         options = XMLNode('options',
                           options_filter_attribute='metadata.semantic_type')
-        for t in self.spec.qiime_type:
+        for t in self.qiime_type:
             options.append(XMLNode('filter', type='add_value', value=repr(t)))
 
         param.append(options)
-        param.append(self._make_validator())
+        if not self.multiple:
+            param.append(self._make_validator())
 
         return param
 
     def _make_validator(self):
-        _validator_set = repr(set(map(str, self.spec.qiime_type)))
+        _validator_set = repr(set(map(str, self.qiime_type)))
         validator = XMLNode(
             'validator',
             'hasattr(value.metadata, "semantic_type")'
@@ -498,10 +503,14 @@ class SimpleCollectionCase(ParamCase):
         self.inner_spec = ParameterSpec(self.inner_type, spec.view_type)
 
     def inputs_xml(self):
-        root = XMLNode('repeat', name=self.name, title=self.name)
+        root = XMLNode('repeat', name=self.name,
+                       title=f'{self.name}: {str(self.spec.qiime_type)}')
         self.add_help(root)
 
-        to_repeat = identify_arg_case('value', self.inner_spec, self.arg)
+        if not self.spec.has_default():
+            root.set('min', '1')
+
+        to_repeat = identify_arg_case('element', self.inner_spec, self.arg)
         root.append(to_repeat.inputs_xml())
 
         return root
@@ -514,7 +523,7 @@ class SimpleCollectionCase(ParamCase):
 
         for idx, arg in enumerate(self.arg):
             root = XMLNode('repeat', name=self.name)
-            to_repeat = identify_arg_case('value', self.inner_spec, arg)
+            to_repeat = identify_arg_case('element', self.inner_spec, arg)
             root.append(to_repeat.tests_xml())
             roots.append(root)
 

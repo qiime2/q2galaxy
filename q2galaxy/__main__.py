@@ -87,12 +87,19 @@ def run(plugin, action, inputs):
 
 def _clean_inputs(inputs):
     cleaned = {}
+
     for key, value in inputs.items():
         if type(value) is list:
             input_ = []
 
-            for elem in inputs[key]:
-                input_.extend(_clean_inputs(elem).values())
+            for elem in value:
+                if type(elem) is dict:
+                    input_.extend(_clean_inputs(elem).values())
+                else:
+                    input_.append(elem)
+
+            if input_ == [None]:
+                input_ = None
 
             cleaned[key] = input_
             continue

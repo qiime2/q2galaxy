@@ -74,8 +74,9 @@ def _convert_arguments(signature, inputs):
                 raise(e)
 
         if qiime2.sdk.util.is_collection_type(type_):
-
-            if type_.name == 'List':
+            if inputs[k] is None:
+                processed_inputs[k] = None
+            elif type_.name == 'List':
                 if qiime2.sdk.util.is_metadata_type(type_):
                     new_list = [_convert_metadata(type_, v) for v in inputs[k]]
                 elif k in signature.inputs:
@@ -121,7 +122,7 @@ def _execute_action(action, action_kwargs):
             pretty_arg = str(arg.uuid)
         elif isinstance(arg, qiime2.Metadata):
             pretty_arg = "<Metadata>"
-        elif isinstance(arg, list):
+        elif isinstance(arg, list) or isinstance(arg, set):
             if len(arg) > 0 and isinstance(arg[0], qiime2.sdk.Result):
                 pretty_arg = ',\n'.join(str(a.uuid) for a in arg)
             else:
