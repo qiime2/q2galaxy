@@ -46,6 +46,9 @@ class TestDataUsage(DiagnosticUsage):
     def _init_metadata_(self, ref, factory):
         return self._init_helper(ref, factory, 'tsv')
 
+    def _init_data_collection_(self, ref, collection_type, records):
+        return [r.result for r in records]
+
 
 class TemplateTestUsage(TestDataUsage):
     def __init__(self):
