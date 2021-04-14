@@ -17,6 +17,9 @@ QIIME 2 actions.
 This interface is currently in alpha, as such there are a few known problems and likely many other currently unknown issues.
 If you come across something you do not see listed, please create an issue!
 
+### Viewing QZV files
+  - To use the `view at qiime2view` links, your Galaxy instance must be running over HTTPS with appropriate CORS headers set. Configuring those settings can be straight-forward if you are already familiar with these terms in a production environment but it is beyond the scope of these instructions.
+
 ### Docker
   - Tools are not pre-installed, so the first job will take an inordinate amount of time as the environment is constructed.
 
