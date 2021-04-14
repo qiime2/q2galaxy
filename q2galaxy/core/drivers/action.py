@@ -73,27 +73,24 @@ def _convert_arguments(signature, inputs):
             else:
                 raise(e)
 
-        if qiime2.sdk.util.is_collection_type(type_):
+        if v is None:
+            processed_inputs[k] = None
 
-            if type_.name == 'List':
-                if qiime2.sdk.util.is_metadata_type(type_):
-                    new_list = [_convert_metadata(type_, v) for v in inputs[k]]
-                elif k in signature.inputs:
-                    new_list = [sdk.Artifact.load(v) for v in inputs[k]]
+        elif qiime2.sdk.util.is_collection_type(type_):
+            if k in signature.inputs:
+                processed_inputs[k] = [sdk.Artifact.load(x) for x in v]
+            elif v == []:
+                if signature.parameters[k].has_default():
+                    processed_inputs[k] = signature.parameters[k].default
                 else:
-                    new_list = inputs[k]
+                    raise NotImplementedError("Empty list given, but no"
+                                              " default can be used")
+            else:
+                processed_inputs[k] = v
 
-                processed_inputs[k] = new_list
-            elif type_.name == 'Set':
-                if qiime2.sdk.util.is_metadata_type(type_):
-                    new_set = \
-                        set(_convert_metadata(type_, v) for v in inputs[k])
-                elif k in signature.inputs:
-                    new_set = set(sdk.Artifact.load(v) for v in inputs[k])
-                else:
-                    new_set = set(inputs[k])
+            if type_.name == 'Set' and processed_inputs[k] is not None:
+                processed_inputs[k] = set(processed_inputs[k])
 
-                processed_inputs[k] = new_set
         elif qiime2.sdk.util.is_metadata_type(type_):
             if type_.name == 'MetadataColumn':
                 value = (inputs[f'{k}_source_data'], inputs[k])
@@ -101,8 +98,10 @@ def _convert_arguments(signature, inputs):
                 value = inputs[k]
 
             processed_inputs[k] = _convert_metadata(type_, value)
-        elif k in signature.inputs and v is not None:
+
+        elif k in signature.inputs:
             processed_inputs[k] = sdk.Artifact.load(v)
+
         else:
             processed_inputs[k] = v
 
@@ -117,8 +116,8 @@ def _execute_action(action, action_kwargs):
             pretty_arg = str(arg.uuid)
         elif isinstance(arg, qiime2.Metadata):
             pretty_arg = "<Metadata>"
-        elif isinstance(arg, list):
-            if len(arg) > 0 and isinstance(arg[0], qiime2.sdk.Result):
+        elif isinstance(arg, list) or isinstance(arg, set):
+            if len(arg) > 0 and isinstance(list(arg)[0], qiime2.sdk.Result):
                 pretty_arg = ',\n'.join(str(a.uuid) for a in arg)
             else:
                 pretty_arg = ', '.join(repr(a) for a in arg)
