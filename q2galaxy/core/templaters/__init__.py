@@ -15,9 +15,9 @@ from q2galaxy.core.templaters.qza_to_tabular import make_builtin_to_tabular
 
 
 BUILTIN_MAKERS = types.MappingProxyType({
-    make_tool_id('tools', 'import'): make_builtin_import,
+    # make_tool_id('tools', 'import'): make_builtin_import,
     make_tool_id('tools', 'export'): make_builtin_export,
-    make_tool_id('tools', 'qza_to_tabular'): make_builtin_to_tabular,
+    # make_tool_id('tools', 'qza_to_tabular'): make_builtin_to_tabular,
 })
 
 
