@@ -125,6 +125,8 @@ planemo test --install_galaxy \
 ```
 This command will skip installation of any tools as they are assumed to already be available in your environment. To disable that, you can omit the `--no_conda` flags from the above command.
 
+Note: this command can take quite some time as it will build the Galaxy UI from source. This will involve creating a lot of node modules via webpack which may appear intimidating, but the results should be cached afterwards so that they won't need to be repeated.
+
 Once that is finished, the server will be running on: `http://localhost:9090`
 
 ## DIY Everything
