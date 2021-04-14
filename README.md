@@ -6,12 +6,53 @@ An interface for generating Galaxy tool descriptions automatically from
 QIIME 2 actions.
 
 ## Table of Contents
+* [Very Quick Start](#the-very-quick-start)
 * [Known Limitations](#known-limitations)
 * [Usage](#usage)
 * [Galaxy Quickstart](#galaxy-quickstart)
   * [Docker](#docker-1)
   * [Planemo](#planemo)
 
+
+# The Very Quick Start
+This is not necessarily the best way to run q2galaxy, but it is the quickest way to take a peek at this interface.
+
+**Before starting, please be aware that your history will not persist between sessions, so you must download any results you wish to keep track of.** To avoid this, use the [Docker instructions](#docker-1) instead.
+
+First, activate your QIIME 2 environment, it will have q2galaxy already installed.
+Then, install Planemo:
+```
+pip install planemo
+```
+
+Then create a directory to store data in for q2galaxy
+```
+export Q2GALAXY_DATA=$HOME/q2galaxy_data
+mkdir -p $Q2GALAXY_DATA
+```
+Next, template out the tools in your environment:
+```
+q2galaxy template all $Q2GALAXY_DATA
+```
+
+Finally run planemo (this will take a while as it must build Galaxy from source, [using Docker](#docker-1) will avoid this):
+```
+planemo serve --install_galaxy \
+  --galaxy_branch qiime2 \
+  --galaxy_source https://github.com/ebolyen/galaxy.git \
+  --no_conda_auto_install \
+  --no_conda_auto_init \
+  --no_cleanup \
+  --file_path $Q2GALAXY_DATA \
+  $Q2GALAXY_DATA
+```
+
+Once that has finished, navigate to [http://localhost:9090](http://localhost:9090)
+
+## **!~ IMPORTANT ~!**
+When using planemo, there is not a convenient way to persist the database which means you will lose information in your History. The above command will store the datasets in `$Q2GALAXY_DATA`, however these are not conveniently named (they will end with `.dat`) and you may need to use `qiime tools peek` to figure out what they used to be.
+
+To avoid losing History state, consider using `Docker` instead.
 
 # Known Limitations
 This interface is currently in alpha, as such there are a few known problems and likely many other currently unknown issues.
@@ -108,7 +149,7 @@ This can be skipped if you are not interested in customizing the image.
 If you are interested, see the [readme here](docker/README.md).
 
 ## Planemo
-This is more useful for those building plugin tool definitions who want to take a quick look at the results.
+This is more useful for those building plugin tool definitions who want to take a quick look at the results. Persisting history state does not appear to be possible.
 
 In your QIIME 2 environment, run:
 ```
@@ -118,17 +159,20 @@ pip install planemo
 Then you will want to template the tools you are interested in (see [Usage](#usage) above).
 Then you can run this command (in your QIIME 2 environment)
 ```
-planemo test --install_galaxy \
+planemo serve --install_galaxy \
   --galaxy_branch qiime2 \
   --galaxy_source https://github.com/ebolyen/galaxy.git \
   --no_conda_auto_install \
   --no_conda_auto_init \
+  --database_type sqlite \
+  --no_cleanup \
+  --file_path <directory to store data> \
   <directory of tools here>
 
 ```
 This command will skip installation of any tools as they are assumed to already be available in your environment. To disable that, you can omit the `--no_conda` flags from the above command.
 
-Note: this command can take quite some time as it will build the Galaxy UI from source. This will involve creating a lot of node modules via webpack which may appear intimidating, but the results should be cached afterwards so that they won't need to be repeated.
+Note: this command can take quite some time as it will build the Galaxy UI from source. This will involve creating a lot of node modules via webpack which may appear intimidating.
 
 Once that is finished, the server will be running on: `http://localhost:9090`
 
