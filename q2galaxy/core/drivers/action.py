@@ -88,7 +88,7 @@ def _convert_arguments(signature, inputs):
             else:
                 processed_inputs[k] = v
 
-            if type_.name == 'Set':
+            if type_.name == 'Set' and processed_inputs[k] is not None:
                 processed_inputs[k] = set(processed_inputs[k])
 
         elif qiime2.sdk.util.is_metadata_type(type_):
