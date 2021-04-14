@@ -93,6 +93,13 @@ Once you have the image downloaded, the next step is to run the container. Our c
 and the instructions in that [README](https://github.com/bgruening/docker-galaxy-stable/blob/master/README.md#usage--toc) will generally apply (just remember to change the container name).
 To persist any data, make sure you mount the `/export` directory as described in those instructions.
 
+Usually you will start the server on `http://localhost:8080`, but this can be changed via the `-p` parameter.
+
+Example:
+```
+docker run -d -p 8080:80 -p 8021:21 -p 8022:22 -v $HOME/q2galaxy_data/:/export/ quay.io/qiime2/q2galaxy
+```
+
 ### Building the image yourself
 This can be skipped if you are not interested in customizing the image.
 If you are interested, see the [readme here](docker/README.md).
@@ -117,6 +124,8 @@ planemo test --install_galaxy \
 
 ```
 This command will skip installation of any tools as they are assumed to already be available in your environment. To disable that, you can omit the `--no_conda` flags from the above command.
+
+Once that is finished, the server will be running on: `http://localhost:9090`
 
 ## DIY Everything
 For the very bravest, there are really only a few unusual parts to setting up the Galaxy instance. The first is to use the QIIME 2 specific fork and branch described above, and the next is to ensure that you have the correct configuration for conda and a tool config file so that your generated tools are accessible. For hints on this, see our [Dockerfile](docker/Dockerfile), and [tool_conf.xml](docker/qiime2_tool_conf.xml) and adapt as necessary.
