@@ -9,9 +9,9 @@ import types
 
 from q2galaxy.core.templaters.action import make_tool
 from q2galaxy.core.templaters.common import make_tool_id
-from q2galaxy.core.templaters.import_data import make_builtin_import
+# from q2galaxy.core.templaters.import_data import make_builtin_import
 from q2galaxy.core.templaters.export_data import make_builtin_export
-from q2galaxy.core.templaters.qza_to_tabular import make_builtin_to_tabular
+# from q2galaxy.core.templaters.qza_to_tabular import make_builtin_to_tabular
 
 
 BUILTIN_MAKERS = types.MappingProxyType({
