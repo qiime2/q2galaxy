@@ -40,17 +40,10 @@ jobs:
     - name: checkout source
       uses: actions/checkout@v2
 
-    - uses: actions/cache@v2
-      with:
-        path: |
-          ~/.planemo/
-          ~/miniconda3/
-        key: days-since-accident-1
-
     - name: install QIIME 2 core distro
       run: |
         envFile=qiime2-latest-py38-linux-conda.yml
-        wget https://raw.githubusercontent.com/qiime2/environment-files/master/latest/staging/$envFile
+        wget https://raw.githubusercontent.com/qiime2/environment-files/master/latest/test/$envFile
         conda env create -q -p ../test-env --file $envFile
 
     - name: install dependencies
@@ -58,57 +51,22 @@ jobs:
       run: |
         source "$CONDA/etc/profile.d/conda.sh"
         conda activate ../test-env
-        pip install planemo
         conda uninstall -y q2galaxy
         make dev
 
     - name: template all
       id: template_all
       shell: bash -l {0}
-      continue-on-error: true
       run: |
         source "$CONDA/etc/profile.d/conda.sh"
         conda activate ../test-env
         make tools
 
-    # IF template all
     - name: publish template all
-      if: steps.template_all.outcome == 'success'
       uses: actions/upload-artifact@v2
       with:
         name: template-all
         path: ${{ env.rendered_dist }}
-    # END IF
-
-    - name: make test
-      id: make_test
-      shell: bash -l {0}
-      run: |
-        source "$CONDA/etc/profile.d/conda.sh"
-        conda activate ../test-env
-        make test
-
-    - name: rendered mystery-stew
-      uses: actions/upload-artifact@v2
-      with:
-        name: mystery-stew
-        path: ${{ env.test_dist }}
-
-    - name: html report
-      uses: actions/upload-artifact@v2
-      with:
-        name: html-report
-        path: ${{ env.report_html }}
-
-    - name: json report
-      uses: actions/upload-artifact@v2
-      with:
-        name: json-report
-        path: ${{ env.report_json }}
-
-    - name: Check for failure
-      if: steps.template_all.outcome == 'failure'
-      run: exit 1
 
   build-conda-package:
     needs: test-against-galaxy
@@ -128,5 +86,5 @@ jobs:
     - uses: qiime2/action-library-packaging@alpha1
       with:
         package-name: q2galaxy
-        build-target: staged
+        build-target: tested
         library-token: ${{ secrets.LIBRARY_TOKEN }}
