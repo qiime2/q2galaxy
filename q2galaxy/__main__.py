@@ -99,9 +99,6 @@ def _clean_inputs(inputs, collapse_single=False):
             res = None
         return res
     elif type(inputs) is dict:
-        if collapse_single and len(inputs) == 1:
-            return _clean_inputs(next(iter(inputs.values())))
-
         res = {}
         for key, value in inputs.items():
             # smash together nested dictionaries which are a consequence of
@@ -111,7 +108,12 @@ def _clean_inputs(inputs, collapse_single=False):
                     res.update(_clean_inputs(value))
                 continue
             res[key] = _clean_inputs(value)
-        return res
+
+        if collapse_single and len(res) == 1:
+            return next(iter(res.values()))
+        else:
+            return res
+
     return inputs
 
 
