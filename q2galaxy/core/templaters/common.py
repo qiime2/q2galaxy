@@ -7,12 +7,13 @@
 # ----------------------------------------------------------------------------
 import io
 import hashlib
+from textwrap import dedent
 
 import qiime2
 import qiime2.sdk as sdk
 
 import q2galaxy
-from q2galaxy.core.util import XMLNode
+from q2galaxy.core.util import XMLNode, rst_header
 
 
 def make_tool_id(plugin_id, action_id):
@@ -83,3 +84,26 @@ def make_builtin_version(plugins):
             'big')
     env_hash = env_hash.to_bytes(16, 'big').hex()[:8]  # use 4 bytes of hash
     return f'{q2galaxy.__version__}+dist.h{env_hash}'
+
+
+def make_formats_help(formats):
+    help_ = rst_header('Formats:', 2)
+    help_ += '\n'
+    help_ += 'These formats have documentation available.\n'
+    missing = []
+    for format_ in formats:
+        if format_.__doc__ is None:
+            missing.append(format_)
+            continue
+        help_ += rst_header(format_.__name__, 3)
+        help_ += '\n'
+        help_ += '\n'
+        help_ += dedent("    " + format_.__doc__)
+
+    if missing:
+        help_ += rst_header('Additional formats without documentation:', 3)
+        help_ += '\n'
+        for format_ in missing:
+            help_ += f' - {format_.__name__}\n'
+
+    return help_

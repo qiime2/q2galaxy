@@ -5,14 +5,19 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
+from textwrap import dedent
+
 import qiime2.plugin.model as model
 import qiime2.sdk as sdk
 from qiime2.sdk.plugin_manager import GetFormatFilters
 
 from q2galaxy.core.util import (XMLNode, galaxy_esc, pretty_fmt_name,
-                                galaxy_ui_var)
+                                galaxy_ui_var, rst_header)
 from q2galaxy.core.templaters.common import (make_builtin_version,
-                                             make_tool_name_from_id)
+                                             make_tool_name_from_id,
+                                             make_requirements,
+                                             make_citations,
+                                             make_formats_help)
 
 
 def make_builtin_import(meta, tool_id):
@@ -57,15 +62,15 @@ def make_builtin_import(meta, tool_id):
                 pm.get_formats(filter=GetFormatFilters.IMPORTABLE,
                                semantic_type=record.semantic_type).values(),
                 key=lambda x: x.format.__name__):
-            plugins.add(fmt_rec.plugin)
-            known_formats.add(fmt_rec.format)
-
             if issubclass(fmt_rec.format,
                           model.SingleFileDirectoryFormatBase):
                 # These are really just noise for the galaxy UI
                 # an implicit transformation from the backing file format
                 # is simpler and removes the redundancy
                 continue
+
+            plugins.add(fmt_rec.plugin)
+            known_formats.add(fmt_rec.format)
 
             option = XMLNode('option', pretty_fmt_name(fmt_rec.format),
                              value=galaxy_esc(fmt_rec.format.__name__))
@@ -91,8 +96,10 @@ def make_builtin_import(meta, tool_id):
     tool.append(
         XMLNode('command', "q2galaxy run tools import '$inputs'"))
     tool.append(_make_config())
-    tool.append(XMLNode('description', 'Import data into a QIIME 2 Artifact'))
-    tool.append(XMLNode('help', ''))
+    tool.append(XMLNode('description', 'Import data into a QIIME 2 artifact'))
+    tool.append(make_citations())
+    tool.append(make_requirements(meta, *[p.project_name for p in plugins]))
+    tool.append(_make_help(known_formats))
     return tool
 
 
@@ -178,6 +185,17 @@ def _add_collection_ui(root, file_attr):
     root.append(section)
 
 
+def _make_help(formats):
+    help_ = rst_header('QIIME 2: tools import', 1)
+    help_ += "Import data as a QIIME 2 artifact\n"
+    help_ += "\n"
+    help_ += rst_header('Instructions', 2)
+    help_ += _instructions
+    help_ += make_formats_help(formats)
+
+    return XMLNode('help', help_)
+
+
 # ! IMPORTANT !
 # This function is never called, but its source code is stolen for a
 # PSP body to be templated by Cheetah. This is written here to permit basic
@@ -223,9 +241,13 @@ def _inline_code(self, write):
 
 def _make_cheetah_config():
     import inspect
-    from textwrap import dedent
     template_psp_lines = inspect.getsource(_inline_code).split('\n')[1:-1]
     template_body = dedent('\n'.join(template_psp_lines))
     return f'''<%
 {template_body}
     %>'''
+
+
+_instructions = """
+TODO
+"""
