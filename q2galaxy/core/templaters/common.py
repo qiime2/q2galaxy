@@ -88,7 +88,6 @@ def make_builtin_version(plugins):
 
 def make_formats_help(formats):
     help_ = rst_header('Formats:', 2)
-    help_ += '\n'
     help_ += 'These formats have documentation available.\n'
     missing = []
     for format_ in formats:
@@ -96,13 +95,10 @@ def make_formats_help(formats):
             missing.append(format_)
             continue
         help_ += rst_header(format_.__name__, 3)
-        help_ += '\n'
-        help_ += '\n'
         help_ += dedent("    " + format_.__doc__)
 
     if missing:
         help_ += rst_header('Additional formats without documentation:', 3)
-        help_ += '\n'
         for format_ in missing:
             help_ += f' - {format_.__name__}\n'
 

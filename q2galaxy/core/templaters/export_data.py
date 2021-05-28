@@ -197,7 +197,6 @@ def pathspec_to_galaxy_regex(pathspec):
 def _make_help(formats):
     help_ = rst_header('QIIME 2: tools export', 1)
     help_ += "Export a QIIME 2 artifact to different formats\n"
-    help_ += "\n"
     help_ += rst_header('Instructions', 2)
     help_ += _instructions
     help_ += make_formats_help(formats)

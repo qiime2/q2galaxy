@@ -188,7 +188,6 @@ def _add_collection_ui(root, file_attr):
 def _make_help(formats):
     help_ = rst_header('QIIME 2: tools import', 1)
     help_ += "Import data as a QIIME 2 artifact\n"
-    help_ += "\n"
     help_ += rst_header('Instructions', 2)
     help_ += _instructions
     help_ += make_formats_help(formats)
