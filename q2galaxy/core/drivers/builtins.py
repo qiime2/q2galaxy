@@ -74,7 +74,7 @@ def _import_get_args(inputs):
 
 @error_handler(header='Unexpected error importing data: ')
 def _import_name_data(type_, format_, files_to_move):
-    if len(files_to_move) == 1:
+    if len(files_to_move) == 1 and files_to_move[0][0] == files_to_move[0][1]:
         path = files_to_move[0][1]
         return qiime2.Artifact.import_data(type_, path, view_type=format_)
 

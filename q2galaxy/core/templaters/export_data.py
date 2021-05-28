@@ -205,5 +205,15 @@ def _make_help(formats):
 
 
 _instructions = """
-TODO
+1. Select the QZA you would like to export. Once selected, two fields will
+   update indicating the type and format of this QZA.
+
+2. If you wish to change the output format, first provide the same type as
+   the QZA (which is shown above). This will filter the avaiable formats.
+
+3. Select the format you desire. Some limited documentation is available on
+   these formats below.
+
+**IMPORTANT:** if you select the wrong type when exporting, you will recieve an
+error suggesting "No transformation from <X> to <Y>".
 """

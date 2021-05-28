@@ -120,18 +120,14 @@ def _add_format_ui(root, format_record):
             else:
                 section = XMLNode("section", name=f'import_{file_attr.name}',
                                   expanded='true')
-                section.append(XMLNode('param', type='text', name='name',
-                                       help='Filename to import as',
-                                       value=file_attr.pathspec))
-                section.append(XMLNode('param', type='data', name='data',
-                                       help=file_attr.format.__name__))
+                _add_data_ui(section, file_attr)
                 root.append(section)
     else:
         section = XMLNode("section", name='import', expanded='true')
         section.append(XMLNode('param', type='hidden', name='name',
                                value=galaxy_esc(None)))
         section.append(XMLNode('param', type='data', name='data',
-                               help=format_record.format.__name__))
+                               help=_format_help_text(format_record.format)))
         root.append(section)
 
 
@@ -149,12 +145,16 @@ def _add_collection_ui(root, file_attr):
     conditional.append(select)
 
     when_collection = XMLNode("when", value='collection')
-    when_collection.append(XMLNode('param', type='data_collection',
-                                   name='elements',
-                                   help=file_attr.format.__name__))
+    when_collection.append(
+        XMLNode('param', type='data_collection', name='elements',
+                help=_format_help_text(file_attr.format)
+                + ' Elements must match regex:'
+                  f' {_regex_xml_escape(file_attr.pathspec)}'))
     add_ext_cond = XMLNode("conditional",
                            name=galaxy_ui_var(tag='cond', name='add_ext'))
     ext_select = XMLNode("param", type='select', label='Append an extension?',
+                         help='This is needed if your element identifiers lack'
+                              ' one.',
                          name=galaxy_ui_var(tag='select', name='ext_pick'))
     ext_select.append(XMLNode("option", "No, use element identifiers as is",
                               value="no"))
@@ -171,11 +171,7 @@ def _add_collection_ui(root, file_attr):
 
     when_individual = XMLNode("when", value='individual')
     repeat = XMLNode("repeat", name='elements', min='1')
-    repeat.append(XMLNode('param', type='text', name='name',
-                          help='Filename to import as',
-                          value=file_attr.pathspec))
-    repeat.append(XMLNode('param', type='data', name='data',
-                          help=file_attr.format.__name__))
+    _add_data_ui(repeat, file_attr)
     when_individual.append(repeat)
 
     conditional.append(when_collection)
@@ -183,6 +179,11 @@ def _add_collection_ui(root, file_attr):
 
     section.append(conditional)
     root.append(section)
+
+
+def _format_help_text(format):
+    return (f'This data should be formatted as a {format.__name__}.'
+            ' See the documentation below for more information.')
 
 
 def _make_help(formats):
@@ -193,6 +194,36 @@ def _make_help(formats):
     help_ += make_formats_help(formats)
 
     return XMLNode('help', help_)
+
+
+def _guess_regex(pathspec):
+    return r'\.' in pathspec or r'.*' in pathspec or r'.+' in pathspec
+
+
+def _regex_xml_escape(regex):
+    # Galaxy appears to double escape this by turning it into an HTML comment
+    # instead of &gt; or friends. So use a Unicode hack to make it seem about
+    # right.
+    regex = regex.replace("<", "‹")
+    regex = regex.replace(">", "›")
+    return regex
+
+
+def _add_data_ui(root, file_attr):
+    name = XMLNode('param', type='text', name='name')
+    if _guess_regex(file_attr.pathspec):
+        name.set('help', 'Filename to import the data as. Must match'
+                 f' regex: {_regex_xml_escape(file_attr.pathspec)}')
+        name.append(XMLNode('validator', file_attr.pathspec, type='regex',
+                            message='This filename doesn\'t match the regex.'))
+    else:
+        name.set('help', 'Filename to import the data as. You shouldn\'t need'
+                 ' to change this unless something is wrong.')
+        name.set('value', file_attr.pathspec)
+
+    root.append(name)
+    root.append(XMLNode('param', type='data', name='data',
+                        help=_format_help_text(file_attr.format)))
 
 
 # ! IMPORTANT !
@@ -248,5 +279,22 @@ def _make_cheetah_config():
 
 
 _instructions = """
-TODO
+ 1. Select the type you wish to import. If you are uncertain, consider what
+    your next action would be and identify what type it requires.
+
+ 2. Identify which format will best suite the data you have available. Many
+    types will have only a single format available. There is some documentation
+    available below on the different formats, however there may not be
+    very much documentation available for your format.
+
+ 3. For each part of the format, you will need to associate some data.
+
+    a. If it is a simple format, you may just select the history dataset.
+    b. If it is a more complex format, you will need to provide either a
+       filename and history dataset, or a collection.
+    c. For collections, they can be constructed via matching a regex against
+       the names of the items in that collection. (You may need to append an
+       extension if your collection's element IDs lack one.) Or you can
+       provide individual history datasets with a filename as in the simpler
+       cases.
 """
