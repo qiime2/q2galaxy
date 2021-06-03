@@ -188,7 +188,7 @@ class InputCase(ParamCase):
             'options',
             options_filter_attribute='metadata.semantic_type_simple')
         for t in self.qiime_type:
-            t.duplicate(predicate=IntersectionExp())
+            t = t.duplicate(predicate=IntersectionExp())
             options.append(XMLNode('filter', type='add_value', value=repr(t)))
 
         param.append(options)
