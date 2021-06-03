@@ -38,6 +38,7 @@ def make_builtin_import(meta, tool_id):
     when = XMLNode('when', value="None")
     conditional.append(when)
 
+    default_formats = _get_default_formats(pm)
     plugins = set()
     known_formats = set()
     for record in sorted(pm.get_semantic_types().values(),
@@ -58,6 +59,7 @@ def make_builtin_import(meta, tool_id):
 
         when.append(fmt_conditional)
 
+        default_format = default_formats[record.semantic_type]
         for fmt_rec in sorted(
                 pm.get_formats(filter=GetFormatFilters.IMPORTABLE,
                                semantic_type=record.semantic_type).values(),
@@ -73,7 +75,9 @@ def make_builtin_import(meta, tool_id):
             known_formats.add(fmt_rec.format)
 
             option = XMLNode('option', pretty_fmt_name(fmt_rec.format),
-                             value=galaxy_esc(fmt_rec.format.__name__))
+                             value=galaxy_esc(fmt_rec.format.__name__),
+                             selected=str(fmt_rec.format
+                                          == default_format).lower())
             select.append(option)
 
             fmt_when = XMLNode('when',
@@ -224,6 +228,18 @@ def _add_data_ui(root, file_attr):
     root.append(name)
     root.append(XMLNode('param', type='data', name='data',
                         help=_format_help_text(file_attr.format)))
+
+
+def _get_default_formats(pm):
+    default_formats = {}
+    for rec in pm.type_formats:
+        fmt = rec.format
+        if issubclass(fmt, model.SingleFileDirectoryFormatBase):
+            fmt = fmt.file.format
+        for semantic_type in rec.type_expression:
+            default_formats[semantic_type] = fmt
+
+    return default_formats
 
 
 # ! IMPORTANT !
