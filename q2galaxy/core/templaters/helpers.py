@@ -11,6 +11,7 @@ from qiime2.sdk.util import (interrogate_collection_type, is_semantic_type,
                              is_metadata_column_type)
 from qiime2.plugin import Choices
 from qiime2.core.type.signature import ParameterSpec
+from qiime2.core.type.grammar import IntersectionExp
 
 from q2galaxy.core.util import XMLNode, galaxy_esc, galaxy_ui_var
 
@@ -183,9 +184,11 @@ class InputCase(ParamCase):
         if self.multiple:
             param.set('multiple', 'true')
 
-        options = XMLNode('options',
-                          options_filter_attribute='metadata.semantic_type')
+        options = XMLNode(
+            'options',
+            options_filter_attribute='metadata.semantic_type_simple')
         for t in self.qiime_type:
+            t.duplicate(predicate=IntersectionExp())
             options.append(XMLNode('filter', type='add_value', value=repr(t)))
 
         param.append(options)
@@ -198,7 +201,7 @@ class InputCase(ParamCase):
         _validator_set = repr(set(map(str, self.qiime_type)))
         validator = XMLNode(
             'validator',
-            'hasattr(value.metadata, "semantic_type")'
+            'hasattr(value.metadata, "semantic_type_simple")'
             f' and value.metadata.semantic_type in {_validator_set}',
             type='expression', message='Incompatible type')
         return validator
