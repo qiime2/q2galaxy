@@ -202,7 +202,8 @@ class InputCase(ParamCase):
                               predicate=IntersectionExp())
 
     def _make_validator(self):
-        _validator_set = repr(set(map(str, self.qiime_type)))
+        _validator_set = \
+            repr(set(map(str, map(self.strip_pred, self.qiime_type))))
         validator = XMLNode(
             'validator',
             'hasattr(value.metadata, "semantic_type_simple")'
