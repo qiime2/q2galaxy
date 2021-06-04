@@ -85,40 +85,36 @@ def run(plugin, action, inputs):
         action_runner(plugin, action, config)
 
 
-def _clean_inputs(inputs):
-    cleaned = {}
+def _clean_inputs(inputs, collapse_single=False):
+    if type(inputs) is str:
+        # Galaxy seems to escape certain strings. For instance, the where
+        # clause from filter-table filter-samples in moving pictures goes
+        # from "[body-site]='gut'"
+        # to "__dq____ob__body-site__cb__=__sq__gut__sq____dq__".
+        # This needs to be undone, so we replace that here:
+        return galaxy_unesc(inputs)
+    elif type(inputs) is list:
+        res = [_clean_inputs(x, collapse_single=True) for x in inputs]
+        if res == [None]:
+            res = None
+        return res
+    elif type(inputs) is dict:
+        res = {}
+        for key, value in inputs.items():
+            # smash together nested dictionaries which are a consequence of
+            # UI nesting
+            if key.startswith(galaxy_ui_var()):
+                if type(value) is dict:
+                    res.update(_clean_inputs(value))
+                continue
+            res[key] = _clean_inputs(value)
 
-    for key, value in inputs.items():
-        if type(value) is list:
-            input_ = []
-
-            for elem in value:
-                if type(elem) is dict:
-                    input_.extend(_clean_inputs(elem).values())
-                else:
-                    input_.append(elem)
-
-            if input_ == [None]:
-                input_ = None
-
-            cleaned[key] = input_
-            continue
-        # smash together nested dictionaries which are a consequence of
-        # UI nesting
-        if key.startswith(galaxy_ui_var()):
-            if type(value) is dict:
-                cleaned.update(_clean_inputs(value))
-            continue
-        if type(value) == str:
-            # Galaxy seems to escape certain strings. For instance, the where
-            # clause from filter-table filter-samples in moving pictures goes
-            # from "[body-site]='gut'"
-            # to "__dq____ob__body-site__cb__=__sq__gut__sq____dq__".
-            # This needs to be undone, so we replace that here:
-            cleaned[key] = galaxy_unesc(value)
+        if collapse_single and len(res) == 1:
+            return next(iter(res.values()))
         else:
-            cleaned[key] = value
-    return cleaned
+            return res
+
+    return inputs
 
 
 @root.command()

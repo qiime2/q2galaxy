@@ -7,12 +7,13 @@
 # ----------------------------------------------------------------------------
 import io
 import hashlib
+from textwrap import dedent
 
 import qiime2
 import qiime2.sdk as sdk
 
 import q2galaxy
-from q2galaxy.core.util import XMLNode
+from q2galaxy.core.util import XMLNode, rst_header
 
 
 def make_tool_id(plugin_id, action_id):
@@ -65,13 +66,13 @@ def make_requirements(conda_meta, *project_names):
         pm = sdk.PluginManager()
         project_names = [p.project_name for p in pm.plugins.values()]
     requirements = XMLNode('requirements')
+    requirements.append(XMLNode('requirement', 'q2galaxy',
+                                type='package', version=q2galaxy.__version__))
     for dep, version in conda_meta.iter_deps(*project_names,
                                              include_self=True):
         r = XMLNode('requirement', dep, type='package', version=version)
         requirements.append(r)
 
-    requirements.append(XMLNode('requirement', 'q2galaxy',
-                                type='package', version=q2galaxy.__version__))
     return requirements
 
 
@@ -83,3 +84,22 @@ def make_builtin_version(plugins):
             'big')
     env_hash = env_hash.to_bytes(16, 'big').hex()[:8]  # use 4 bytes of hash
     return f'{q2galaxy.__version__}+dist.h{env_hash}'
+
+
+def make_formats_help(formats):
+    help_ = rst_header('Formats:', 2)
+    help_ += 'These formats have documentation available.\n'
+    missing = []
+    for format_ in formats:
+        if format_.__doc__ is None:
+            missing.append(format_)
+            continue
+        help_ += rst_header(format_.__name__, 3)
+        help_ += dedent("    " + format_.__doc__)
+
+    if missing:
+        help_ += rst_header('Additional formats without documentation:', 3)
+        for format_ in missing:
+            help_ += f' - {format_.__name__}\n'
+
+    return help_

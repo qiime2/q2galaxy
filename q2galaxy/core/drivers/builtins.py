@@ -6,9 +6,13 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 import os
+import sys
+import tempfile
 import distutils
 
 import qiime2
+import qiime2.sdk
+import qiime2.util
 
 from q2galaxy.core.drivers.stdio import error_handler, stdio_files
 
@@ -34,7 +38,56 @@ def _get_tool(action_id):
 
 
 def import_data(inputs, stdio):
-    raise NotImplementedError("TODO")
+    type_, format_, files_to_move = _import_get_args(inputs,
+                                                     _stdio=stdio)
+    artifact = _import_name_data(type_, format_, files_to_move,
+                                 _stdio=stdio)
+    _import_save(artifact,
+                 _stdio=stdio)
+
+
+@error_handler(header='Unexpected error collecting arguments: ')
+def _import_get_args(inputs):
+    type_ = qiime2.sdk.parse_type(inputs.pop('type'))
+    format_ = qiime2.sdk.parse_format(inputs.pop('format'))
+    print(f'｢type: {type_}｣', file=sys.stdout)
+    print(f'｢format: {format_.__name__}｣', file=sys.stdout)
+
+    files_to_move = []
+    for key, value in inputs.items():
+        if not key.startswith('import'):
+            raise ValueError(f"Unknown instruction in JSON: {key}")
+        elif key == 'import':
+            # leave name as is, it's a FileFormat not a Directory Attr
+            files_to_move.append((value['data'], value['data']))
+        else:
+            _, attr_name = key.split("_")
+            if 'elements' in value:
+                ext = value.get('ext', '')
+                files_to_move.extend([
+                    (v['data'], v['name'] + ext) for v in value['elements']])
+            else:
+                files_to_move.append((value['data'], value['name']))
+
+    return type_, format_, files_to_move
+
+
+@error_handler(header='Unexpected error importing data: ')
+def _import_name_data(type_, format_, files_to_move):
+    if len(files_to_move) == 1 and files_to_move[0][0] == files_to_move[0][1]:
+        path = files_to_move[0][1]
+        return qiime2.Artifact.import_data(type_, path, view_type=format_)
+
+    with tempfile.TemporaryDirectory(prefix='q2galaxy-import',
+                                     dir=os.getcwd()) as dir_:
+        for src, dst in files_to_move:
+            qiime2.util.duplicate(src, os.path.join(dir_, dst))
+        return qiime2.Artifact.import_data(type_, dir_, view_type=format_)
+
+
+@error_handler(header='Unexpected error saving QZA: ')
+def _import_save(artifact):
+    artifact.save('imported_data')
 
 
 def export_data(inputs, stdio):
@@ -44,10 +97,6 @@ def export_data(inputs, stdio):
                                       _stdio=stdio)
     _export_save(output_format,
                  _stdio=stdio)
-
-
-def qza_to_tabular(inputs, stdio):
-    raise NotImplementedError("TODO")
 
 
 @error_handler(header='Unexpected error collecting arguments: ')
@@ -84,3 +133,7 @@ def _export_save(format_obj):
         distutils.dir_util.copy_tree(str(format_obj), os.getcwd())
     else:
         qiime2.util.duplicate(str(format_obj), format_obj.path.name)
+
+
+def qza_to_tabular(inputs, stdio):
+    raise NotImplementedError("TODO")

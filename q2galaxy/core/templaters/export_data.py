@@ -9,10 +9,10 @@ import qiime2.sdk as sdk
 import qiime2.plugin.model as model
 from qiime2.sdk.plugin_manager import GetFormatFilters
 
-from q2galaxy.core.util import XMLNode, galaxy_esc, pretty_fmt_name
+from q2galaxy.core.util import XMLNode, galaxy_esc, pretty_fmt_name, rst_header
 from q2galaxy.core.templaters.common import (
     make_builtin_version, make_requirements, make_tool_name_from_id,
-    make_config)
+    make_config, make_citations, make_formats_help)
 
 
 def make_builtin_export(meta, tool_id):
@@ -162,13 +162,14 @@ def make_builtin_export(meta, tool_id):
 
     tool = XMLNode('tool', id=tool_id, name=make_tool_name_from_id(tool_id),
                    version=make_builtin_version(plugins))
-    tool.append(XMLNode('description', 'Export data from QIIME 2 artifacts'))
+    tool.append(XMLNode('description', 'Export data from a QIIME 2 artifact'))
     tool.append(XMLNode('command', "q2galaxy run tools export '$inputs'"))
     tool.append(make_config())
     tool.append(inputs)
     tool.append(outputs)
+    tool.append(make_citations())
     tool.append(make_requirements(meta, *[p.project_name for p in plugins]))
-    tool.append(XMLNode('help', ''))
+    tool.append(_make_help(known_formats))
 
     return tool
 
@@ -191,3 +192,28 @@ def pathspec_to_galaxy_regex(pathspec):
         rest = parts[:-1]
 
     return f'(?P<designation>{delim.join(rest)})\\.(?P<ext>{ext})', True
+
+
+def _make_help(formats):
+    help_ = rst_header('QIIME 2: tools export', 1)
+    help_ += "Export a QIIME 2 artifact to different formats\n"
+    help_ += rst_header('Instructions', 2)
+    help_ += _instructions
+    help_ += make_formats_help(formats)
+
+    return XMLNode('help', help_)
+
+
+_instructions = """
+1. Select the QZA you would like to export. Once selected, two fields will
+   update indicating the type and format of this QZA.
+
+2. If you wish to change the output format, first provide the same type as
+   the QZA (which is shown above). This will filter the avaiable formats.
+
+3. Select the format you desire. Some limited documentation is available on
+   these formats below.
+
+**IMPORTANT:** if you select the wrong type when exporting, you will recieve an
+error suggesting "No transformation from <X> to <Y>".
+"""
