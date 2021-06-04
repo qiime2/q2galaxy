@@ -198,8 +198,9 @@ class InputCase(ParamCase):
         return param
 
     def strip_pred(self, expr):
-        return expr.duplicate(fields=tuple(self.strip_pred(c) for c in expr.fields),
-                              predicate=IntersectionExp())
+        return expr.duplicate(
+            fields=tuple(self.strip_pred(c) for c in expr.fields),
+            predicate=IntersectionExp())
 
     def _make_validator(self):
         _validator_set = \
