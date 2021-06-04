@@ -188,7 +188,7 @@ class InputCase(ParamCase):
             'options',
             options_filter_attribute='metadata.semantic_type_simple')
         for t in self.qiime_type:
-            t = t.duplicate(predicate=IntersectionExp())
+            t = self.strip_pred(t)
             options.append(XMLNode('filter', type='add_value', value=repr(t)))
 
         param.append(options)
@@ -197,12 +197,16 @@ class InputCase(ParamCase):
 
         return param
 
+    def strip_pred(self, expr):
+        return expr.duplicate(fields=tuple(self.strip_pred(c) for c in expr.fields),
+                              predicate=IntersectionExp())
+
     def _make_validator(self):
         _validator_set = repr(set(map(str, self.qiime_type)))
         validator = XMLNode(
             'validator',
             'hasattr(value.metadata, "semantic_type_simple")'
-            f' and value.metadata.semantic_type in {_validator_set}',
+            f' and value.metadata.semantic_type_simple in {_validator_set}',
             type='expression', message='Incompatible type')
         return validator
 
