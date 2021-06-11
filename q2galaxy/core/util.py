@@ -90,7 +90,7 @@ def get_mystery_stew():
     test_plugin = create_plugin(ints=True, strings=True, bools=True,
                                 floats=True, artifacts=True,
                                 primitive_unions=True, metadata=True,
-                                collections=True)
+                                collections=True, typemaps=True)
     pm.add_plugin(test_plugin)
 
     return pm.get_plugin(id='mystery_stew')

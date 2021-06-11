@@ -188,8 +188,10 @@ class InputCase(ParamCase):
             'options',
             options_filter_attribute='metadata.semantic_type_simple')
         for t in self.qiime_type:
-            t = self.strip_pred(t)
-            options.append(XMLNode('filter', type='add_value', value=repr(t)))
+            for elem in t:
+                elem = self.strip_pred(elem)
+                options.append(XMLNode('filter', type='add_value',
+                                       value=repr(elem)))
 
         param.append(options)
         if not self.multiple:
