@@ -188,6 +188,15 @@ class InputCase(ParamCase):
             'options',
             options_filter_attribute='metadata.semantic_type_simple')
         for t in self.qiime_type:
+            # We need more arbitrary denesting this needs to happen here and when
+            # we actually template that may be able to use a single helper. Need to cartesian product
+            # fields then duplicate
+            # Foo[A | B, X | Y]
+            # we need
+            # Foo[A, X]
+            # Foo[B, X]
+            # Foo[A, Y]
+            # Foo[B, Y]
             for elem in t:
                 elem = self.strip_pred(elem)
                 options.append(XMLNode('filter', type='add_value',
@@ -200,9 +209,13 @@ class InputCase(ParamCase):
         return param
 
     def strip_pred(self, expr):
-        return expr.duplicate(
-            fields=tuple(self.strip_pred(c) for c in expr.fields),
-            predicate=IntersectionExp())
+        try:
+            return expr.duplicate(
+                fields=tuple(self.strip_pred(c) for c in expr.fields),
+                predicate=IntersectionExp())
+        except Exception as e:
+            for elem in expr:
+                return self.strip_pred(elem)
 
     def _make_validator(self):
         _validator_set = \
