@@ -1,6 +1,5 @@
 {% set data = load_setup_py_data() %}
 {% set version = data.get('version') or 'placehold' %}
-{% set release = '.'.join(version.split('.')[:2]) %}
 
 package:
   name: q2galaxy
@@ -21,19 +20,21 @@ requirements:
 
   run:
     - python  {{ python }}
-    - qiime2 {{ release }}.*
+    - qiime2 {{ qiime2_epoch }}.*
     # Don't include this because it isn't available on staging yet.
     # - q2-mystery-stew {{ release }}.*
     - click
     - lxml
 
 test:
+  requires:
+    - qiime2 >={{ qiime2 }}
+
   imports:
     - q2galaxy
   # remove this test until q2-mystery-stew is available
   # commands:
   #   - q2galaxy template tests $(mktemp -d)
-
 
 about:
   home: https://qiime2.org
