@@ -334,22 +334,25 @@ class PrimitiveUnionCase(ParamCase):
         def _sanitize(t):
             return galaxy_ui_var(value=galaxy_esc(str(t).replace('%', 'X')))
 
-        for type_ in spec.qiime_type:
-            if type_.predicate is not None and is_union(type_.predicate):
-                for pred in type_.predicate.unpack_union():
-                    new_type = type_.duplicate(predicate=pred)
-                    self.branches[_sanitize(new_type)] = new_type
-            elif (type_.predicate is not None
-                  and type_.predicate.name == 'Choices'):
-                for choice in type_.predicate.template.choices:
-                    new_type = type_.duplicate(predicate=Choices(choice))
-                    self.branches[galaxy_esc(choice)] = new_type
-            elif type_.name == 'Bool':
-                for choice in [True, False]:
-                    new_type = type_.duplicate(predicate=Choices(choice))
-                    self.branches[galaxy_esc(choice)] = new_type
-            else:
-                self.branches[_sanitize(type_)] = type_
+        # "outer" will unpack a TypeVar, otherwise, type_ iterates over itself
+        # yielding itself unchanged
+        for outer in spec.qiime_type:
+            for type_ in outer:
+                if type_.predicate is not None and is_union(type_.predicate):
+                    for pred in type_.predicate.unpack_union():
+                        new_type = type_.duplicate(predicate=pred)
+                        self.branches[_sanitize(new_type)] = new_type
+                elif (type_.predicate is not None
+                      and type_.predicate.name == 'Choices'):
+                    for choice in type_.predicate.template.choices:
+                        new_type = type_.duplicate(predicate=Choices(choice))
+                        self.branches[galaxy_esc(choice)] = new_type
+                elif type_.name == 'Bool':
+                    for choice in [True, False]:
+                        new_type = type_.duplicate(predicate=Choices(choice))
+                        self.branches[galaxy_esc(choice)] = new_type
+                else:
+                    self.branches[_sanitize(type_)] = type_
 
         if self.spec.default is None:
             self.branches[galaxy_esc(None)] = {None}
@@ -365,12 +368,15 @@ class PrimitiveUnionCase(ParamCase):
 
     def inputs_xml(self):
         base_types = []
-        for t in self.spec.qiime_type:
-            if t.predicate is not None and is_union(t.predicate):
-                for pred in t.predicate.unpack_union():
-                    base_types.append(t.duplicate(predicate=pred))
-            else:
-                base_types.append(t)
+        # "outer" will unpack a TypeVar, otherwise, t iterates over itself
+        # yielding itself unchanged
+        for outer in self.spec.qiime_type:
+            for t in outer:
+                if t.predicate is not None and is_union(t.predicate):
+                    for pred in t.predicate.unpack_union():
+                        base_types.append(t.duplicate(predicate=pred))
+                else:
+                    base_types.append(t)
 
         to_add = []
 

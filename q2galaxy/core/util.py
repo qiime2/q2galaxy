@@ -88,14 +88,18 @@ def get_mystery_stew():
     pm = sdk.PluginManager(add_plugins=False)
 
     test_plugin = create_plugin(
-        ints=True,
-        strings=True,
-        bools=True,
-        floats=True,
-        artifacts=True,
-        primitive_unions=True,
-        metadata=True,
-        collections=True)
+        # Uncomment these to test a specific aspect quickly:
+        # ints=True,
+        # strings=True,
+        # bools=True,
+        # floats=True,
+        # artifacts=True,
+        # primitive_unions=True,
+        # metadata=True,
+        # collections=True,
+        # typemaps=True,
+        # outputs=True,
+    )
 
     pm.add_plugin(test_plugin)
     return pm.get_plugin(id='mystery_stew')
