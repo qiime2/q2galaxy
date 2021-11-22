@@ -43,7 +43,7 @@ jobs:
     - name: install QIIME 2 core distro
       run: |
         envFile=qiime2-latest-py38-linux-conda.yml
-        wget https://raw.githubusercontent.com/qiime2/environment-files/master/latest/test/$envFile
+        wget https://raw.githubusercontent.com/qiime2/environment-files/master/latest/staging/$envFile
         conda env create -q -p ../test-env --file $envFile
 
     - name: install dependencies
