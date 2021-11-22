@@ -7,59 +7,126 @@
 # ----------------------------------------------------------------------------
 import os
 
-from qiime2.sdk.usage import DiagnosticUsage
+from qiime2.sdk.usage import Usage, UsageVariable
 
 from q2galaxy.core.util import XMLNode
 from q2galaxy.core.templaters.helpers import signature_to_galaxy
 
 
 def collect_test_data(action, test_dir):
-    for example in action.examples.values():
-        use = TestDataUsage(write_dir=test_dir)
+    for idx, example in enumerate(action.examples.values()):
+        use = GalaxyTestUsage(example_path=(action, idx), write_dir=test_dir)
         example(use)
-        yield from use._created_files
+        yield from use.created_files
 
 
-class TestDataUsage(DiagnosticUsage):
-    def __init__(self, write_dir=None):
+class GalaxyTestUsageVariable(UsageVariable):
+    def __init__(self, name, factory, var_type, usage, prefix):
+        super().__init__(name, factory, var_type, usage)
+        self.prefix = prefix
+
+    def write_file(self, write_dir):
+        basename = self.to_interface_name()
+        path = os.path.join(write_dir, basename)
+
+        if not os.path.exists(path):
+            status = {'status': 'created', 'type': 'file', 'path': path}
+        else:
+            status = {'status': 'updated', 'type': 'file', 'path': path}
+
+        self.factory().save(path)
+        return status
+
+    def to_interface_name(self):
+        ext_map = {'artifact': 'qza',
+                   'visualization': 'qzv',
+                   'metadata': 'tsv'}
+        if self.var_type in ext_map:
+            ext = ext_map[self.var_type]
+            return '.'.join([self.prefix, self.name, ext])
+        elif self.var_type == 'column' and hasattr(self, '_q2galaxy_ref'):
+            return self._q2galaxy_ref
+        else:
+            return "UNSUPPORTED: " + self.name
+
+    def assert_output_type(self, semantic_type):
+        self._galaxy_has_line_matching(path='metadata.yaml',
+                                       expression=f'type: {semantic_type}')
+
+    def assert_has_line_matching(self, path, expression):
+        self._galaxy_has_line_matching(path=f'data\\/{path}',
+                                       expression=expression)
+
+    def _galaxy_has_line_matching(self, path, expression):
+        output = self.use.output_lookup[self.name]
+
+        contents = output.find('assert_contents')
+        if contents is None:
+            contents = XMLNode('assert_contents')
+            output.append(contents)
+
+        path = (r'[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]'
+                r'{3}-[0-9a-f]{12}\/') + path
+        archive = contents.find(f'has_archive_member[@path="{path}"]')
+        if archive is None:
+            archive = XMLNode('has_archive_member', path=path)
+            contents.append(archive)
+
+        archive.append(XMLNode('has_line_matching', expression=expression))
+
+
+class GalaxyTestUsage(Usage):
+    def __init__(self, example_path, write_dir=None):
         super().__init__()
-        self.write_dir = write_dir
-        self._created_files = []
-        self._factories = {}
-
-    def _init_helper(self, ref, factory, ext):
-        basename = '.'.join([ref, ext])
-        self._factories[ref] = factory
-        if self.write_dir is not None:
-            path = os.path.join(self.write_dir, basename)
-            if not os.path.exists(path):
-                self._created_files.append(
-                    {'status': 'created', 'type': 'file', 'path': path})
-
-            factory().save(path)
-
-        return basename
-
-    def _init_data_(self, ref, factory):
-        return self._init_helper(ref, factory, 'qza')
-
-    def _init_metadata_(self, ref, factory):
-        return self._init_helper(ref, factory, 'tsv')
-
-    def _init_data_collection_(self, ref, collection_type, records):
-        return [r.result for r in records]
-
-
-class TemplateTestUsage(TestDataUsage):
-    def __init__(self):
-        super().__init__()
+        self.prefix = f'{example_path[0].id}.test{example_path[1]}'
         self.xml = XMLNode('test')
-        self._output_lookup = {}
+        self.output_lookup = {}
+        self.write_dir = write_dir
+        self.created_files = []
 
-    def _make_params(self, action, input_opts):
-        _, sig = action.get_action()
+    def usage_variable(self, name, factory, var_type):
+        return GalaxyTestUsageVariable(name, factory, var_type, self,
+                                       self.prefix)
 
-        for case in signature_to_galaxy(sig, input_opts):
+    def init_artifact(self, name, factory):
+        var = super().init_artifact(name, factory)
+
+        if self.write_dir is not None:
+            status = var.write_file(self.write_dir)
+            self.created_files.append(status)
+
+        return var
+
+    def init_metadata(self, name, factory):
+        var = super().init_metadata(name, factory)
+
+        if self.write_dir is not None:
+            status = var.write_file(self.write_dir)
+            self.created_files.append(status)
+
+        return var
+
+    def get_metadata_column(self, name, column_name, variable):
+        var = super().get_metadata_column(name, column_name, variable)
+
+        md = variable.execute()
+        # 1-based index, first col is IDs, second col is the first data column
+        col_idx = str(list(md.columns.keys()).index(column_name) + 2)
+        var._q2galaxy_ref = (variable.to_interface_name(), col_idx)
+
+        return var
+
+    def merge_metadata(self, name, *variables):
+        var = super().merge_metadata(name, *variables)
+        # TODO: do /something/ when this is supported.
+        return var
+
+    def action(self, action, inputs, outputs):
+        vars_ = super().action(action, inputs, outputs)
+
+        sig = action.get_action().signature
+        mapped = inputs.map_variables(lambda v: v.to_interface_name())
+        for case in signature_to_galaxy(sig, mapped):
             test_xml = case.tests_xml()
             if test_xml is None:
                 continue
@@ -68,37 +135,9 @@ class TemplateTestUsage(TestDataUsage):
             for xml in test_xml:
                 self.xml.append(xml)
 
-    def _make_outputs(self, output_opts):
-        for output_name, output in output_opts.items():
-            output_xml = XMLNode('output', name=output_name, ftype='qza')
-            self._output_lookup[output] = output_xml
-            self.xml.append(output_xml)
+        for output_name, output in outputs.items():
+            xml_out = XMLNode('output', name=output_name, ftype='qza')
+            self.output_lookup[output] = xml_out
+            self.xml.append(xml_out)
 
-    def _action_(self, action, input_opts: dict, output_opts: dict):
-        self._make_params(action, input_opts)
-        self._make_outputs(output_opts)
-
-        return super()._action_(action, input_opts, output_opts)
-
-    def _get_metadata_column_(self, column_name, record):
-        if record.result is None:
-            return None
-        md = self._factories[record.ref]()
-        column = str(list(md.columns.keys()).index(column_name) + 2)
-        return (record.result, column)
-
-    def _assert_has_line_matching_(self, ref, label, path, expression):
-        output = self._output_lookup[ref]
-
-        contents = output.find('assert_contents')
-        if contents is None:
-            contents = XMLNode('assert_contents')
-            output.append(contents)
-
-        path = f'.*/data/{path}'
-        archive = contents.find(f'has_archive_member[@path="{path}"]')
-        if archive is None:
-            archive = XMLNode('has_archive_member', path=path)
-            contents.append(archive)
-
-        archive.append(XMLNode('has_line_matching', expression=expression))
+        return vars_

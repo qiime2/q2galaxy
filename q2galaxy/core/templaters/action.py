@@ -8,7 +8,7 @@
 import qiime2.sdk as sdk
 
 import q2galaxy
-from q2galaxy.core.usage import TemplateTestUsage
+from q2galaxy.core.usage import GalaxyTestUsage
 from q2galaxy.core.util import XMLNode, galaxy_ui_var, rst_header
 from q2galaxy.core.templaters.common import (
     make_tool_id, make_tool_name, make_config, make_citations,
@@ -64,8 +64,8 @@ def make_tool(conda_meta, plugin, action):
 
 def make_tests(action):
     tests = XMLNode('tests')
-    for example in action.examples.values():
-        use = TemplateTestUsage()
+    for idx, example in enumerate(action.examples.values()):
+        use = GalaxyTestUsage(example_path=(action, idx))
         example(use)
         tests.append(use.xml)
 
