@@ -62,16 +62,7 @@ def _convert_arguments(signature, inputs):
     all_inputs_params.update(signature.parameters)
     all_inputs_params.update(signature.inputs)
     for k, v in inputs.items():
-        try:
-            type_ = all_inputs_params[k].qiime_type
-        # If we had a metadata column arg then the extra arg generated to
-        # accept the column specifier won't be in the signature and should be
-        # skipped
-        except KeyError as e:
-            if '_source_data' in str(e):
-                continue
-            else:
-                raise(e)
+        type_ = all_inputs_params[k].qiime_type
 
         if v is None:
             processed_inputs[k] = None
@@ -92,12 +83,7 @@ def _convert_arguments(signature, inputs):
                 processed_inputs[k] = set(processed_inputs[k])
 
         elif qiime2.sdk.util.is_metadata_type(type_):
-            if type_.name == 'MetadataColumn':
-                value = (inputs[f'{k}_source_data'], inputs[k])
-            else:
-                value = inputs[k]
-
-            processed_inputs[k] = _convert_metadata(type_, value)
+            processed_inputs[k] = _convert_metadata(type_, inputs[k], k)
 
         elif k in signature.inputs:
             processed_inputs[k] = sdk.Artifact.load(v)
@@ -122,8 +108,9 @@ def _execute_action(action, action_kwargs):
             else:
                 pretty_arg = ', '.join(repr(a) for a in arg)
         line = f'｢{param}: {pretty_arg}｣'
-        print(line, file=sys.stdout)
-    print(" " * GALAXY_TRIMMED_STRING_LEN)  # see _error_handler for rational
+        print(line, file=sys.stdout, flush=True)
+    # see _error_handler for rational
+    print(" " * GALAXY_TRIMMED_STRING_LEN, file=sys.stdout, flush=True)
 
     return action(**action_kwargs)
 
@@ -135,46 +122,60 @@ def _save_results(results):
         print(f"Saved {result.type} to: {location}", file=sys.stdout)
 
 
-def _convert_metadata(input_, value):
-    if input_.name == 'MetadataColumn':
-        value, column = value
-        # Galaxy writes data_columns as lists in the JSON for reasons I assume.
-        column, = column
-        if column is None:
-            return None
-    fp = value
-
-    if fp is None:
+def _convert_metadata(input_, value, param):
+    if not value:
         return None
 
-    try:
-        artifact = qiime2.Artifact.load(fp)
-    except Exception:
-        try:
-            metadata = qiime2.Metadata.load(fp)
-        except Exception as e:
-            raise ValueError("There was an issue with loading the file %s as "
-                             "metadata:" % fp) from e
-    else:
-        try:
-            metadata = artifact.view(qiime2.Metadata)
-        except Exception as e:
-            raise ValueError("There was an issue with viewing the artifact "
-                             "%s as QIIME 2 Metadata:" % fp) from e
+    if input_.name == 'MetadataColumn':
+        if value['type'] == 'none':
+            return None
+        value = [value]
 
-    if input_.name != 'MetadataColumn':
-        return metadata
+    mds = []
+    for entry in value:
+        if entry['type'] == 'tsv':
+            try:
+                md = qiime2.Metadata.load(entry['source'])
+            except Exception as e:
+                raise ValueError(
+                    "There was an issue with loading the file provided to %r"
+                    " as metadata:" % param) from e
+        else:
+            art = qiime2.Artifact.load(entry['source'])
+            try:
+                md = art.view(qiime2.Metadata)
+            except Exception as e:
+                raise ValueError(
+                    "There was an issue with viewing the artifact provided to "
+                    "%r as QIIME 2 Metadata:" % param) from e
+
+        mds.append(md)
+
+    if len(mds) > 1:
+        return mds[0].merge(*mds[1:])
     else:
+        metadata = mds[0]
+
+    if input_.name == 'MetadataColumn':
         try:
-            # galaxy is 1-indexed and includes the ID column, so subtract 2
-            column = list(metadata.columns.keys())[int(column) - 2]
+            if value[0]['type'] == 'qza':
+                column = value[0]['column']
+            else:
+                # Galaxy writes data_columns as lists in the JSON for reasons
+                # I assume.
+                column = value[0]['column'][0]
+                # galaxy is 1-indexed and includes the ID column, so subtract 2
+                column = list(metadata.columns.keys())[int(column) - 2]
             metadata_column = metadata.get_column(column)
         except Exception:
             raise ValueError("There was an issue with retrieving column %r "
-                             "from the metadata." % column)
+                             "from %r." % (column, param))
 
         if metadata_column not in input_:
             raise ValueError("Metadata column is of type %r, but expected %r."
                              % (metadata_column, input_.fields[0]))
 
         return metadata_column
+
+    else:
+        return metadata

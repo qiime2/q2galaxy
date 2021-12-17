@@ -72,6 +72,9 @@ class ParamCase:
         self.spec = spec
         self.arg = arg
 
+    def get_rst_arg(self):
+        return self.arg
+
     def is_advanced(self):
         return self.spec.has_default()
 
@@ -80,6 +83,12 @@ class ParamCase:
 
     def tests_xml(self):
         raise NotImplementedError(self.__class__)
+
+    def rst_instructions(self):
+        if self.spec.has_default() and self.spec.default == self.arg:
+            return (f'Leave *"{self.name}"* as its default value of'
+                    f' ``{self.get_rst_arg()}``')
+        return f'Set *"{self.name}"* to ``{self.get_rst_arg()}``'
 
     def add_help(self, xml):
         if self.spec.has_default():
@@ -124,46 +133,164 @@ class NotImplementedCase(ParamCase):
 
 class MetadataTabularCase(ParamCase):
     def inputs_xml(self):
-        param = XMLNode('param', type='data', format='tabular', name=self.name)
-        self.add_help(param)
-        self.add_default(param)
-        self.add_label(param)
+        root = XMLNode('repeat', name=self.name,
+                       title=f'{self.name}: {str(self.spec.qiime_type)}')
+        self.add_help(root)
+        if not self.spec.has_default():
+            root.set('min', '1')
 
-        return param
+        conditional = XMLNode('conditional',
+                              name=galaxy_ui_var(tag='conditional',
+                                                 name=self.name))
+
+        select = XMLNode('param', type='select',
+                         name='type',
+                         label=f'{self.name}: {str(self.spec.qiime_type)}')
+        select.append(XMLNode('option', 'Metadata from TSV',
+                              value='tsv', selected='true'))
+        select.append(XMLNode('option', 'Metadata from Artifact',
+                              value='qza'))
+
+        conditional.append(select)
+
+        when_tsv = XMLNode('when', value='tsv')
+        tsv = XMLNode('param', type='data', format='tabular,qiime2.tabular',
+                      name='source', label='Metadata Source')
+        when_tsv.append(tsv)
+        conditional.append(when_tsv)
+
+        when_artifact = XMLNode('when', value='qza')
+        artifact = XMLNode('param', type='data', format='qza',
+                           name='source', label='Metadata Source')
+        when_artifact.append(artifact)
+        conditional.append(when_artifact)
+
+        root.append(conditional)
+        return root
 
     def tests_xml(self):
         if self.arg is None:
             return
-        arg = str(self.arg)
-        return XMLNode('param', name=self.name, value=arg, ftype='tabular')
+        arg = self.arg
+        if type(self.arg) is not list:
+            arg = [self.arg]
+
+        merged = []
+        for type_, source in arg:
+            repeat = XMLNode('repeat', name=self.name)
+            cond = XMLNode('conditional',
+                           name=galaxy_ui_var(tag='conditional',
+                                              name=self.name))
+            cond.append(XMLNode('param', name='type', value=type_))
+            if type_ == 'tsv':
+                type_ = 'qiime2.tabular'
+            cond.append(XMLNode('param', name='source', value=source,
+                                ftype=type_))
+            repeat.append(cond)
+            merged.append(repeat)
+        return merged
+
+    def rst_instructions(self):
+        if self.arg is None:
+            return f'Leave *"{self.name}"* unchanged (do not insert an entry).'
+
+        md_args = self.arg
+        if type(self.arg) is not list:
+            md_args = [self.arg]
+
+        sub = []
+        first_md = not self.spec.has_default()
+        for md_arg in md_args:
+            inner_sub = []
+            if first_md:
+                first_md = False
+                sub.append(('Perform the following steps.', inner_sub))
+            else:
+                sub.append((f'Press the ``+ Insert {self.name}`` button to set'
+                            f' up the next steps.', inner_sub))
+            type_, source = md_arg
+            if type_ == 'tsv':
+                inner_sub.append('Leave as ``Metadata from TSV``')
+            else:
+                inner_sub.append('Change to ``Metadata from Artifact``')
+            inner_sub.append(f'Set *"Metadata Source"* to ``{source}``')
+
+        return (f'For *"{self.name}"*:', sub)
 
 
-class ColumnTabularCase(MetadataTabularCase):
+class ColumnTabularCase(ParamCase):
     def inputs_xml(self):
-        file_ref = self.name + '_source_data'
-        param1 = XMLNode('param', type='data', format='tabular',
-                         name=file_ref)
-        self.add_label(param1)
-        self.add_default(param1)
+        conditional = XMLNode('conditional', name=self.name)
 
-        param2 = XMLNode('param', type='data_column', use_header_names='true',
-                         data_ref=file_ref, name=self.name, label=' ')
-        self.add_help(param2)
-        self.add_default(param2)
+        select = XMLNode('param', type='select',
+                         name='type',
+                         label=f'{self.name}: {str(self.spec.qiime_type)}')
+        from_tsv = XMLNode('option', 'Metadata from TSV', value='tsv')
+        if self.spec.has_default():
+            select.append(XMLNode('option', 'None (default)', value='none',
+                                  selected='true'))
+            conditional.append(XMLNode('when', value='none'))
+        else:
+            from_tsv.set('selected', 'true')
 
-        param2.append(XMLNode('validator', 'value != "1"', type='expression',
-                              message='The first column cannot be selected ('
-                                      'they are IDs).'))
+        select.append(from_tsv)
+        select.append(XMLNode('option', 'Metadata from Artifact',
+                              value='qza'))
 
-        return [param1, param2]
+        conditional.append(select)
+
+        when_tsv = XMLNode('when', value='tsv')
+        tsv1 = XMLNode('param', type='data', format='tabular,qiime2.tabular',
+                       name='source', label='Metadata Source')
+        tsv2 = XMLNode('param', type='data_column', use_header_names='true',
+                       data_ref='source', name='column', label='Column Name')
+        tsv2.append(XMLNode('validator', 'value != "1"', type='expression',
+                            message='The first column cannot be selected ('
+                                    'they are IDs).'))
+        when_tsv.append(tsv1)
+        when_tsv.append(tsv2)
+        conditional.append(when_tsv)
+
+        when_artifact = XMLNode('when', value='qza')
+        art1 = XMLNode('param', type='data', format='qza',
+                       name='source', label='Metadata Source')
+        art2 = XMLNode('param', type='text', name='column',
+                       label='Column Name')
+        art2.append(XMLNode('validator', type='empty_field'))
+        when_artifact.append(art1)
+        when_artifact.append(art2)
+        conditional.append(when_artifact)
+        self.add_help(select)
+
+        return conditional
 
     def tests_xml(self):
         if self.arg is None:
             return
-        md_file, column_number = self.arg
-        return [XMLNode('param', name=self.name + '_source_data',
-                        value=md_file, ftype='tabular'),
-                XMLNode('param', name=self.name, value=column_number)]
+        type_, source, column = self.arg
+        cond = XMLNode('conditional', name=self.name)
+        cond.append(XMLNode('param', name='type', value=type_))
+        if type_ == 'tsv':
+            type_ = 'qiime2.tabular'
+        cond.append(XMLNode('param', name='source', value=source, ftype=type_))
+        cond.append(XMLNode('param', name='column', value=column))
+        return cond
+
+    def rst_instructions(self):
+        if self.arg is None:
+            return super().rst_instructions()
+
+        sub = []
+        type_, source, col = self.arg
+        if type_ == 'tsv':
+            sub.append('Leave as ``Metadata from TSV``')
+        else:
+            sub.append('Change to ``Metadata from Artifact``')
+
+        sub.append(f'Set *"Metadata Source"* to ``{source}``')
+        sub.append(f'Set *"Column Name"* to ``{col}``')
+
+        return (f'For *"{self.name}"*:', sub)
 
 
 class InputCase(ParamCase):
@@ -174,6 +301,11 @@ class InputCase(ParamCase):
         self.qiime_type = spec.qiime_type
         if multiple:
             self.qiime_type = spec.qiime_type.fields[0]
+
+    def get_rst_arg(self):
+        if self.arg is None:
+            return "'Nothing selected'"
+        return f"#: {self.arg}"
 
     def inputs_xml(self):
         param = XMLNode('param', type='data', format='qza', name=self.name)
@@ -212,12 +344,30 @@ class InputCase(ParamCase):
             arg = str(self.arg)
         return XMLNode('param', name=self.name, value=arg, ftype='qza')
 
+    def rst_instructions(self):
+        if not self.multiple:
+            return super().rst_instructions()
+        if self.arg is None:
+            return 'Leave *"{self.name}"* without any selections.'
+
+        sub = []
+        for arg in self.arg:
+            sub.append(f'``#: {arg}``')
+
+        return (f'For *"{self.name}"*, use ctrl-(or command)-click to select'
+                f' the following inputs:', sub)
+
 
 class NumericCase(ParamCase):
     _qiime_type_to_param_type = {
         'Int': 'integer',
         'Float': 'float',
     }
+
+    def get_rst_arg(self):
+        if self.arg is None:
+            return "<blank>"
+        return self.arg
 
     def add_type(self, xml):
         xml.set('type',
@@ -298,6 +448,13 @@ class StrCase(ParamCase):
 
 
 class BoolCase(ParamCase):
+    def get_rst_arg(self):
+        if self.arg is None:
+            return 'None'
+        if self.arg:
+            return 'Yes'
+        return 'No'
+
     def inputs_xml(self):
         predicate = self.spec.qiime_type.predicate
         if (self.spec.has_default() and type(self.spec.default) is bool
@@ -528,6 +685,25 @@ class SimpleCollectionCase(ParamCase):
             roots.append(root)
 
         return roots
+
+    def rst_instructions(self):
+        if self.arg is None:
+            return super().rst_instructions()
+
+        if len(self.arg) == 1:
+            case = identify_arg_case('element', self.inner_spec,
+                                     next(iter(self.arg)))
+            return (f'For *"{self.name}"*:',
+                    [case.rst_instructions(),
+                     '(Do not insert additional values.)'])
+
+        sub = []
+        for arg in self.arg:
+            case = identify_arg_case('element', self.inner_spec, arg)
+            sub.append(f'Add *"element"* set to ``{case.get_rst_arg()}``')
+
+        return (f'For *"{self.name}"*, use the ``+ {self.name}`` button to add'
+                f' the corresponding values:', sub)
 
 
 def make_optional(param):

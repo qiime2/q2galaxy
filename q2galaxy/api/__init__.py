@@ -13,6 +13,13 @@ import q2galaxy.core.util as _util
 import q2galaxy.core.templaters as _templaters
 import q2galaxy.core.environment as _environment
 import q2galaxy.core.usage as _usage
+from q2galaxy.api.usage import GalaxyRSTInstructionsUsage
+
+
+__all__ = ['template_action_iter', 'template_plugin_iter',
+           'template_builtins_iter', 'template_all_iter', 'template_action',
+           'template_plugin', 'template_builtins', 'template_all',
+           'GalaxyRSTInstructionsUsage']
 
 
 def _template_dir_iter(directory):

@@ -20,13 +20,72 @@ def collect_test_data(action, test_dir):
         yield from use.created_files
 
 
-class GalaxyTestUsageVariable(UsageVariable):
+class GalaxyBaseUsageVariable(UsageVariable):
+    def to_interface_name(self, skip_ref=False):
+        ext_map = {'artifact': 'qza',
+                   'visualization': 'qzv',
+                   'metadata': 'tsv',
+                   'column': '',
+                   'format': ''}
+
+        if not skip_ref and hasattr(self, '_q2galaxy_ref'):
+            return self._q2galaxy_ref
+
+        ext = ext_map[self.var_type]
+        return '.'.join([self.name, ext])
+
+
+class GalaxyBaseUsage(Usage):
+    """Manage representation of metadata, etc, used by case handlers"""
+    _USE_TSV_INDEX = False
+
+    def usage_variable(self, name, factory, var_type):
+        return GalaxyBaseUsageVariable(name, factory, var_type, self)
+
+    def init_metadata(self, name, factory):
+        var = super().init_metadata(name, factory)
+
+        var._q2galaxy_ref = ('tsv', var.to_interface_name())
+
+        return var
+
+    def get_metadata_column(self, name, column_name, variable):
+        var = super().get_metadata_column(name, column_name, variable)
+
+        if type(variable._q2galaxy_ref) is list:
+            raise NotImplementedError(
+                "q2galaxy does not support merging before taking a column")
+        if self._USE_TSV_INDEX and variable._q2galaxy_ref[0] == 'tsv':
+            md = variable.execute()
+            # 1-based index, 1st col is IDs, 2nd col is the first data column
+            column_name = str(list(md.columns.keys()).index(column_name) + 2)
+
+        var._q2galaxy_ref = (*variable._q2galaxy_ref, column_name)
+
+        return var
+
+    def view_as_metadata(self, name, variable):
+        var = super().view_as_metadata(name, variable)
+
+        var._q2galaxy_ref = ('qza', variable.to_interface_name())
+
+        return var
+
+    def merge_metadata(self, name, *variables):
+        var = super().merge_metadata(name, *variables)
+
+        var._q2galaxy_ref = [v.to_interface_name() for v in variables]
+
+        return var
+
+
+class GalaxyTestUsageVariable(GalaxyBaseUsageVariable):
     def __init__(self, name, factory, var_type, usage, prefix):
         super().__init__(name, factory, var_type, usage)
         self.prefix = prefix
 
     def write_file(self, write_dir):
-        basename = self.to_interface_name()
+        basename = self.to_interface_name(skip_ref=True)
         path = os.path.join(write_dir, basename)
 
         if not os.path.exists(path):
@@ -37,17 +96,11 @@ class GalaxyTestUsageVariable(UsageVariable):
         self.factory().save(path)
         return status
 
-    def to_interface_name(self):
-        ext_map = {'artifact': 'qza',
-                   'visualization': 'qzv',
-                   'metadata': 'tsv'}
-        if self.var_type in ext_map:
-            ext = ext_map[self.var_type]
-            return '.'.join([self.prefix, self.name, ext])
-        elif self.var_type == 'column' and hasattr(self, '_q2galaxy_ref'):
-            return self._q2galaxy_ref
-        else:
-            return "UNSUPPORTED: " + self.name
+    def to_interface_name(self, skip_ref=False):
+        name = super().to_interface_name(skip_ref=skip_ref)
+        if type(name) is str:
+            return '.'.join([self.prefix, name])
+        return name
 
     def assert_output_type(self, semantic_type):
         self._galaxy_has_line_matching(path='metadata.yaml',
@@ -75,7 +128,9 @@ class GalaxyTestUsageVariable(UsageVariable):
         archive.append(XMLNode('has_line_matching', expression=expression))
 
 
-class GalaxyTestUsage(Usage):
+class GalaxyTestUsage(GalaxyBaseUsage):
+    _USE_TSV_INDEX = True
+
     def __init__(self, example_path, write_dir=None):
         super().__init__()
         self.prefix = f'{example_path[0].id}.test{example_path[1]}'
@@ -104,21 +159,6 @@ class GalaxyTestUsage(Usage):
             status = var.write_file(self.write_dir)
             self.created_files.append(status)
 
-        return var
-
-    def get_metadata_column(self, name, column_name, variable):
-        var = super().get_metadata_column(name, column_name, variable)
-
-        md = variable.execute()
-        # 1-based index, first col is IDs, second col is the first data column
-        col_idx = str(list(md.columns.keys()).index(column_name) + 2)
-        var._q2galaxy_ref = (variable.to_interface_name(), col_idx)
-
-        return var
-
-    def merge_metadata(self, name, *variables):
-        var = super().merge_metadata(name, *variables)
-        # TODO: do /something/ when this is supported.
         return var
 
     def action(self, action, inputs, outputs):
