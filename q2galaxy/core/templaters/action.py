@@ -8,6 +8,7 @@
 import qiime2.sdk as sdk
 
 import q2galaxy
+from q2galaxy.api.usage import GalaxyRSTInstructionsUsage
 from q2galaxy.core.usage import GalaxyTestUsage
 from q2galaxy.core.util import XMLNode, galaxy_ui_var, rst_header
 from q2galaxy.core.templaters.common import (
@@ -104,6 +105,16 @@ def make_help(plugin, action):
     help_ += "|  \n"
     help_ += rst_header("Description:", 2)
     help_ += action.description
+    help_ += "\n"
+    if action.examples:
+        help_ += rst_header("Examples:", 2)
+        for example_name, example in action.examples.items():
+            use = GalaxyRSTInstructionsUsage()
+            example(use)
+
+            help_ += rst_header(example_name, 3)
+            help_ += '\n'.join(use.render())
+
     help_ += "\n\n"
     help_ += "|  \n\n"
     return XMLNode('help', help_)
