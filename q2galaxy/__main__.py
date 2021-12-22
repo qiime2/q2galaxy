@@ -13,7 +13,7 @@ import qiime2.sdk as sdk
 
 from q2galaxy.core.drivers import action_runner, builtin_runner, get_version
 from q2galaxy.api import (template_plugin_iter, template_all_iter,
-                          template_builtins_iter)
+                          template_builtins_iter, template_tool_conf)
 from q2galaxy.core.util import galaxy_ui_var, get_mystery_stew, galaxy_unesc
 
 _OUTPUT_DIR = click.Path(file_okay=False, dir_okay=True, exists=True)
@@ -69,6 +69,13 @@ def all(output):
 def tests(ctx, output):
     test_plugin = get_mystery_stew()
     ctx.invoke(plugin, plugin=test_plugin.id, output=output)
+
+
+@template.command()
+@click.argument('install_dir', type=str)
+@click.argument('output', type=click.Path(file_okay=True, dir_okay=False))
+def tool_conf(install_dir, output):
+    template_tool_conf(install_dir, output)
 
 
 @root.command()

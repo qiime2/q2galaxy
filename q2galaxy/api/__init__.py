@@ -7,6 +7,8 @@
 # ----------------------------------------------------------------------------
 import os
 
+import lxml.etree as _xml
+
 import qiime2.sdk as _sdk
 
 import q2galaxy.core.util as _util
@@ -19,7 +21,7 @@ from q2galaxy.api.usage import GalaxyRSTInstructionsUsage
 __all__ = ['template_action_iter', 'template_plugin_iter',
            'template_builtins_iter', 'template_all_iter', 'template_action',
            'template_plugin', 'template_builtins', 'template_all',
-           'GalaxyRSTInstructionsUsage']
+           'GalaxyRSTInstructionsUsage', 'template_tool_conf']
 
 
 def _template_dir_iter(directory):
@@ -102,3 +104,40 @@ def template_builtins(directory):
 def template_all(directory):
     for _ in template_all_iter(directory):
         pass
+
+
+def template_tool_conf(directory, out_path):
+    toolbox = _util.XMLNode('toolbox')
+
+    section = _util.XMLNode('section', id='getext', name='Get Data')
+    section.append(_util.XMLNode('tool', file='data_source/upload.xml'))
+    toolbox.append(section)
+
+    section = _util.XMLNode('section', id='qiime2_tools', name='QIIME 2 Tools')
+
+    suite_name = 'suite_qiime2_tools'
+    suite_dir = os.path.join(directory, suite_name)
+    for tool_id in _templaters.BUILTIN_MAKERS:
+        path = os.path.join(suite_dir, tool_id + '.xml')
+        section.append(_util.XMLNode('tool', file=path))
+
+    toolbox.append(section)
+
+    pm = _sdk.PluginManager()
+    for plugin in sorted(pm.plugins.values(), key=lambda x: x.id):
+        plugin_name = plugin.id.replace('_', '-')
+        suite_name = f'suite_qiime2_{plugin_name}'
+        section = _util.XMLNode('section', id=suite_name,
+                                name=f'QIIME 2 {plugin_name}')
+
+        for action in sorted(plugin.actions.values(), key=lambda x: x.id):
+            filename = _templaters.make_tool_id(plugin.id, action.id) + '.xml'
+            path = os.path.join(directory, suite_name, filename)
+            section.append(_util.XMLNode('tool', file=path))
+
+        toolbox.append(section)
+
+    with open(out_path, 'wb') as fh:
+        _xml.indent(toolbox, ' ' * 4)
+        fh.write(_xml.tostring(toolbox, pretty_print=True, encoding='utf-8',
+                               xml_declaration=True))
