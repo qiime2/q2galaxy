@@ -32,7 +32,9 @@ class GalaxyBaseUsageVariable(UsageVariable):
             return self._q2galaxy_ref
 
         ext = ext_map[self.var_type]
-        return '.'.join([self.name, ext])
+        if ext:
+            return '.'.join([self.name.replace('_', '-'), ext])
+        return self.name
 
 
 class GalaxyBaseUsage(Usage):
