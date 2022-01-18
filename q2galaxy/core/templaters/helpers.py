@@ -421,6 +421,15 @@ class StrCase(ParamCase):
                                 predicate.template.choices)
         else:
             param = XMLNode('param', name=self.name, type='text')
+            # sanitizer prevents default replacement with 'X' for some
+            # punctuation characters. It appears that this sanitizing requires
+            # an enumeration of valid characters, so supporting arbitrary
+            # unicode will likely require a change to Galaxy itself.
+            sanitizer = XMLNode('sanitizer')
+            valid = XMLNode('valid', initial='string.printable')
+            sanitizer.append(valid)
+            param.append(sanitizer)
+
             if self.spec.has_default():
                 if self.spec.default is None:
                     self.add_help(param)
