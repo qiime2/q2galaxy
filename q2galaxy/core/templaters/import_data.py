@@ -131,6 +131,7 @@ def _add_format_ui(root, format_record):
         section.append(XMLNode('param', type='hidden', name='name',
                                value=galaxy_esc(None)))
         section.append(XMLNode('param', type='data', name='data',
+                               format='data',
                                help=_format_help_text(format_record.format)))
         root.append(section)
 
@@ -226,7 +227,7 @@ def _add_data_ui(root, file_attr):
         name.set('value', file_attr.pathspec)
 
     root.append(name)
-    root.append(XMLNode('param', type='data', name='data',
+    root.append(XMLNode('param', type='data', name='data', format='data',
                         help=_format_help_text(file_attr.format)))
 
 

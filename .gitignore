@@ -136,3 +136,4 @@ rendered/tools/**
 __tmp*/
 docker/qiime2-*-conda.yml
 docker/tools/
+docker/qiime2_tool_conf.xml

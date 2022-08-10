@@ -47,9 +47,21 @@ def make_tool(conda_meta, plugin, action):
         output = make_output(name, spec)
         outputs.append(output)
 
-    tool = XMLNode('tool', id=make_tool_id(plugin.id, action.id),
-                   name=make_tool_name(plugin.name, action.id),
-                   version=f'{plugin.version}+q2galaxy.{q2galaxy.__version__}')
+    # Drop local identifier if it exists, it will be in a different local
+    # identifier (multiple + is not allowed in pep440)
+    if '+' in plugin.version:
+        # swap some things around
+        plugin_version, local = plugin.version.split('+')
+        local += '-'
+    else:
+        plugin_version = plugin.version
+        local = ''
+
+    q2galaxy_version = q2galaxy.__version__.replace('+', '.')
+    tool = XMLNode(
+        'tool', id=make_tool_id(plugin.id, action.id),
+        name=make_tool_name(plugin.name, action.id),
+        version=f'{plugin_version}+{local}q2galaxy.{q2galaxy_version}')
     tool.append(XMLNode('description', action.name))
     tool.append(make_command(plugin, action))
     tool.append(make_version_command(plugin))

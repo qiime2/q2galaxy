@@ -24,6 +24,9 @@ __all__ = ['template_action_iter', 'template_plugin_iter',
            'GalaxyRSTInstructionsUsage', 'template_tool_conf']
 
 
+_SUITE_PREFIX = 'suite_qiime2__'
+
+
 def _template_dir_iter(directory):
     if not os.path.exists(directory):
         os.mkdir(directory)
@@ -56,7 +59,7 @@ def template_action_iter(plugin, action, directory):
 
 
 def template_plugin_iter(plugin, directory):
-    suite_name = f'suite_qiime2_{plugin.id.replace("_", "-")}'
+    suite_name = _SUITE_PREFIX + plugin.id
     suite_dir = os.path.join(directory, suite_name, '')
 
     if plugin.actions:
@@ -68,7 +71,7 @@ def template_plugin_iter(plugin, directory):
 def template_builtins_iter(directory):
     meta = _environment.find_conda_meta()
 
-    suite_name = 'suite_qiime2_tools'
+    suite_name = _SUITE_PREFIX + 'tools'
     suite_dir = os.path.join(directory, suite_name, '')
     yield from _template_dir_iter(suite_dir)
 
@@ -113,9 +116,10 @@ def template_tool_conf(directory, out_path):
     section.append(_util.XMLNode('tool', file='data_source/upload.xml'))
     toolbox.append(section)
 
-    section = _util.XMLNode('section', id='qiime2_tools', name='QIIME 2 Tools')
+    section = _util.XMLNode('section', id='qiime2__tools',
+                            name='QIIME 2 Tools')
 
-    suite_name = 'suite_qiime2_tools'
+    suite_name = _SUITE_PREFIX + 'tools'
     suite_dir = os.path.join(directory, suite_name)
     for tool_id in _templaters.BUILTIN_MAKERS:
         path = os.path.join(suite_dir, tool_id + '.xml')
@@ -125,8 +129,7 @@ def template_tool_conf(directory, out_path):
 
     pm = _sdk.PluginManager()
     for plugin in sorted(pm.plugins.values(), key=lambda x: x.id):
-        plugin_name = plugin.id.replace('_', '-')
-        suite_name = f'suite_qiime2_{plugin_name}'
+        suite_name = _SUITE_PREFIX + plugin.id
         section = _util.XMLNode('section', id=suite_name,
                                 name=f'QIIME 2 {plugin_name}')
 

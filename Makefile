@@ -5,9 +5,13 @@ PREFIX ?= $(CONDA_PREFIX)
 
 all: ;
 
-lint:
+lint: stew
 	flake8
 	q2lint
+
+planemo-lint: clean stew tools
+	planemo lint ./rendered/tests/suite_* --fail_level warn
+	planemo lint ./rendered/tools/suite_* --fail_level error
 
 stew: all
 	q2galaxy template tests ./rendered/tests/
@@ -20,13 +24,21 @@ builtins: all
 
 test: stew
 	planemo test --install_galaxy \
-	  --galaxy_branch qiime2 \
-	  --galaxy_source https://github.com/ebolyen/galaxy.git \
+	  --galaxy_branch release_22.05 \
+	  --galaxy_source https://github.com/galaxyproject/galaxy.git \
 	  --no_conda_auto_install \
 	  --no_conda_auto_init \
 	  --test_output ./rendered/tests/tool_test_output.html \
 	  --test_output_json ./rendered/tests/tool_test_output.json \
-	  ./rendered/tests/suite_qiime2_mystery-stew/
+	  ./rendered/tests/suite_qiime2__mystery_stew/
+
+serve: tools
+	planemo serve --install_galaxy \
+	  --galaxy_branch release_22.05 \
+	  --galaxy_source https://github.com/galaxyproject/galaxy.git \
+	  --no_conda_auto_install \
+	  --no_conda_auto_init \
+	  ./rendered/tools/
 
 install: all
 	$(PYTHON) setup.py install
@@ -35,8 +47,8 @@ dev: all
 	pip install -e .
 
 clean: distclean
-	rm -r ./rendered/tests/suite_*; \
-	rm -r ./rendered/tools/suite_*
+	rm -rf ./rendered/tests/suite_*; \
+	rm -rf ./rendered/tools/suite_*
 
 distclean: ;
 
