@@ -1,9 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<toolbox monitor="false">
-    <section id="getext" name="Get Data">
-	    <tool file="data_source/upload.xml" />
-    </section>
-    <section id="qiime2" name="QIIME 2">
-        <tool_dir dir="/qiime2_tools/"/>
-    </section>
-</toolbox>
