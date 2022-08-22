@@ -581,8 +581,13 @@ class PrimitiveUnionCase(ParamCase):
                 when.append(hidden)
                 root.append(when)
 
+        used_choices = set()
         for choice in choices:
             value = galaxy_esc(choice)
+            if value in used_choices:
+                continue
+            else:
+                used_choices.add(value)
             option = XMLNode('option', self._display_func(choice), value=value)
             if self.spec.has_default() and self.spec.default == choice:
                 option.set('selected', 'true')

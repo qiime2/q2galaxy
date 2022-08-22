@@ -130,6 +130,7 @@ def template_tool_conf(directory, out_path):
     pm = _sdk.PluginManager()
     for plugin in sorted(pm.plugins.values(), key=lambda x: x.id):
         suite_name = _SUITE_PREFIX + plugin.id
+        plugin_name = plugin.id.replace('_', '-')
         section = _util.XMLNode('section', id=suite_name,
                                 name=f'QIIME 2 {plugin_name}')
 

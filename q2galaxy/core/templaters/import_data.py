@@ -60,6 +60,7 @@ def make_builtin_import(meta, tool_id):
         when.append(fmt_conditional)
 
         default_format = default_formats[record.semantic_type]
+        seen_formats = set()
         for fmt_rec in sorted(
                 pm.get_formats(filter=GetFormatFilters.IMPORTABLE,
                                semantic_type=record.semantic_type).values(),
@@ -69,22 +70,27 @@ def make_builtin_import(meta, tool_id):
                 # These are really just noise for the galaxy UI
                 # an implicit transformation from the backing file format
                 # is simpler and removes the redundancy
-                continue
+                fmt = fmt_rec.format.file.format
+                plugin = fmt_rec.plugin
+            else:
+                fmt = fmt_rec.format
+                plugin = fmt_rec.plugin
 
-            plugins.add(fmt_rec.plugin)
-            known_formats.add(fmt_rec.format)
+            if fmt not in seen_formats:
+                plugins.add(plugin)
+                known_formats.add(fmt)
+                seen_formats.add(fmt)
 
-            option = XMLNode('option', pretty_fmt_name(fmt_rec.format),
-                             value=galaxy_esc(fmt_rec.format.__name__),
-                             selected=str(fmt_rec.format
-                                          == default_format).lower())
-            select.append(option)
+                option = XMLNode('option', pretty_fmt_name(fmt),
+                                 value=galaxy_esc(fmt.__name__),
+                                 selected=str(fmt == default_format).lower())
+                select.append(option)
 
-            fmt_when = XMLNode('when',
-                               value=galaxy_esc(fmt_rec.format.__name__))
-            fmt_conditional.append(fmt_when)
+                fmt_when = XMLNode('when',
+                                   value=galaxy_esc(fmt.__name__))
+                fmt_conditional.append(fmt_when)
 
-            _add_format_ui(fmt_when, fmt_rec)
+                _add_format_ui(fmt_when, fmt)
 
         conditional.append(when)
 
@@ -114,31 +120,33 @@ def _make_config():
     return configfiles
 
 
-def _add_format_ui(root, format_record):
-    if issubclass(format_record.format, model.DirectoryFormat):
-        for field in format_record.format._fields:
-            file_attr = getattr(format_record.format, field)
+def _add_format_ui(root, format):
+    if issubclass(format, model.DirectoryFormat):
+        for field in format._fields:
+            file_attr = getattr(format, field)
 
             if isinstance(file_attr, model.FileCollection):
                 _add_collection_ui(root, file_attr)
             else:
-                section = XMLNode("section", name=f'import_{file_attr.name}',
-                                  expanded='true')
+                section = XMLNode(
+                    "section", name=f'import_{file_attr.name}',
+                    expanded='true', title=f'Import {file_attr.name}')
                 _add_data_ui(section, file_attr)
                 root.append(section)
     else:
-        section = XMLNode("section", name='import', expanded='true')
+        section = XMLNode("section", name='import', expanded='true',
+                          title='Import')
         section.append(XMLNode('param', type='hidden', name='name',
                                value=galaxy_esc(None)))
         section.append(XMLNode('param', type='data', name='data',
                                format='data',
-                               help=_format_help_text(format_record.format)))
+                               help=_format_help_text(format)))
         root.append(section)
 
 
 def _add_collection_ui(root, file_attr):
     section = XMLNode("section", name=f'import_{file_attr.name}',
-                      expanded='true')
+                      expanded='true', title=f'Import {file_attr.name}')
     conditional = XMLNode("conditional",
                           name=galaxy_ui_var(tag='cond', name=file_attr.name))
     select = XMLNode("param", type='select', label='Select a mechanism',
@@ -175,7 +183,7 @@ def _add_collection_ui(root, file_attr):
     when_collection.append(add_ext_cond)
 
     when_individual = XMLNode("when", value='individual')
-    repeat = XMLNode("repeat", name='elements', min='1')
+    repeat = XMLNode("repeat", name='elements', min='1', title='Add Elements')
     _add_data_ui(repeat, file_attr)
     when_individual.append(repeat)
 
