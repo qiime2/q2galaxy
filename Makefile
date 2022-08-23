@@ -17,10 +17,10 @@ stew: all
 	q2galaxy template tests ./rendered/tests/
 
 tools: all
-	q2galaxy template all ./rendered/tools/
+	q2galaxy template all ./rendered/tools/ --distro core --metapackage qiime2-core
 
 builtins: all
-	q2galaxy template builtins ./rendered/tools/
+	q2galaxy template builtins ./rendered/tools/ --distro core --metapackage qiime2-core
 
 test: stew
 	planemo test --install_galaxy \

@@ -44,8 +44,8 @@ def _template_tool_iter(tool, path):
         yield {'status': 'updated', 'type': 'file', 'path': path}
 
 
-def template_action_iter(plugin, action, directory):
-    meta = _environment.find_conda_meta()
+def template_action_iter(plugin, action, directory, metapackage=None):
+    meta = _environment.find_conda_meta(metapackage)
 
     filename = _templaters.make_tool_id(plugin.id, action.id) + '.xml'
     filepath = os.path.join(directory, filename)
@@ -58,58 +58,63 @@ def template_action_iter(plugin, action, directory):
     yield from _usage.collect_test_data(action, test_dir)
 
 
-def template_plugin_iter(plugin, directory):
+def template_plugin_iter(plugin, directory, metapackage=None):
     suite_name = _SUITE_PREFIX + plugin.id
     suite_dir = os.path.join(directory, suite_name, '')
 
     if plugin.actions:
         yield from _template_dir_iter(suite_dir)
     for action in plugin.actions.values():
-        yield from template_action_iter(plugin, action, suite_dir)
+        yield from template_action_iter(plugin, action, suite_dir, metapackage)
 
 
-def template_builtins_iter(directory):
-    meta = _environment.find_conda_meta()
+def template_builtins_iter(directory, distro=None, metapackage=None):
+    meta = _environment.find_conda_meta(metapackage)
 
     suite_name = _SUITE_PREFIX + 'tools'
+    if distro is not None:
+        suite_name = _SUITE_PREFIX.replace(
+            'qiime2', f'qiime2_{distro}') + 'tools'
     suite_dir = os.path.join(directory, suite_name, '')
     yield from _template_dir_iter(suite_dir)
 
     for tool_id, tool_maker in _templaters.BUILTIN_MAKERS.items():
+        if distro is not None:
+            tool_id = f'qiime2_{distro}' + tool_id[len('qiime2'):]
         path = os.path.join(suite_dir, tool_id + '.xml')
         tool = tool_maker(meta, tool_id)
         yield from _template_tool_iter(tool, path)
 
 
-def template_all_iter(directory):
+def template_all_iter(directory, distro=None, metapackage=None):
     pm = _sdk.PluginManager()
     for plugin in pm.plugins.values():
-        yield from template_plugin_iter(plugin, directory)
+        yield from template_plugin_iter(plugin, directory, metapackage)
 
-    yield from template_builtins_iter(directory)
+    yield from template_builtins_iter(directory, distro, metapackage)
 
 
-def template_action(plugin, action, directory):
-    for _ in template_action_iter(plugin, action, directory):
+def template_action(plugin, action, directory, metapackage=None):
+    for _ in template_action_iter(plugin, action, directory, metapackage):
         pass
 
 
-def template_plugin(plugin, directory):
-    for _ in template_plugin_iter(plugin, directory):
+def template_plugin(plugin, directory, metapackage=None):
+    for _ in template_plugin_iter(plugin, directory, metapackage):
         pass
 
 
-def template_builtins(directory):
-    for _ in template_builtins_iter(directory):
+def template_builtins(directory, distro=None, metapackage=None):
+    for _ in template_builtins_iter(directory, distro, metapackage):
         pass
 
 
-def template_all(directory):
-    for _ in template_all_iter(directory):
+def template_all(directory, distro=None, metapackage=None):
+    for _ in template_all_iter(directory, distro, metapackage):
         pass
 
 
-def template_tool_conf(directory, out_path):
+def template_tool_conf(directory, out_path, distro=None):
     toolbox = _util.XMLNode('toolbox')
 
     section = _util.XMLNode('section', id='getext', name='Get Data')
@@ -120,8 +125,13 @@ def template_tool_conf(directory, out_path):
                             name='QIIME 2 Tools')
 
     suite_name = _SUITE_PREFIX + 'tools'
+    if distro is not None:
+        suite_name = _SUITE_PREFIX.replace(
+            'qiime2', f'qiime2_{distro}') + 'tools'
     suite_dir = os.path.join(directory, suite_name)
     for tool_id in _templaters.BUILTIN_MAKERS:
+        if distro is not None:
+            tool_id = f'qiime2_{distro}' + tool_id[len('qiime2'):]
         path = os.path.join(suite_dir, tool_id + '.xml')
         section.append(_util.XMLNode('tool', file=path))
 

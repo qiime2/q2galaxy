@@ -42,24 +42,29 @@ def template():
 @template.command()
 @click.argument('plugin', type=str)
 @click.argument('output', type=_OUTPUT_DIR)
-def plugin(plugin, output):
+@click.option('--metapackage', type=str, default=None)
+def plugin(plugin, output, metapackage):
     pm = sdk.PluginManager()
     plugin = pm.get_plugin(id=plugin)
-    for status in template_plugin_iter(plugin, output):
+    for status in template_plugin_iter(plugin, output, metapackage):
         _echo_status(status)
 
 
 @template.command()
 @click.argument('output', type=_OUTPUT_DIR)
-def builtins(output):
-    for status in template_builtins_iter(output):
+@click.option('--distro', type=str, default=None)
+@click.option('--metapackage', type=str, default=None)
+def builtins(output, distro, metapackage):
+    for status in template_builtins_iter(output, distro, metapackage):
         _echo_status(status)
 
 
 @template.command()
 @click.argument('output', type=_OUTPUT_DIR)
-def all(output):
-    for status in template_all_iter(output):
+@click.option('--distro', type=str, default=None)
+@click.option('--metapackage', type=str, default=None)
+def all(output, distro, metapackage):
+    for status in template_all_iter(output, distro, metapackage):
         _echo_status(status)
 
 
@@ -74,8 +79,9 @@ def tests(ctx, output):
 @template.command()
 @click.argument('install_dir', type=str)
 @click.argument('output', type=click.Path(file_okay=True, dir_okay=False))
-def tool_conf(install_dir, output):
-    template_tool_conf(install_dir, output)
+@click.option('--distro', type=str, default=None)
+def tool_conf(install_dir, output, distro):
+    template_tool_conf(install_dir, output, distro=distro)
 
 
 @root.command()

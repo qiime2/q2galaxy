@@ -59,17 +59,14 @@ def make_citations(plugin=None, action=None):
 
 
 def make_requirements(conda_meta, *project_names):
-    # HACK:
-    # use a single environment when templating instead of following the full
-    # trail. An exception to this is q2-mystery-stew
     if len(project_names) == 1 and project_names[0] == 'q2-mystery-stew':
         pass
-    else:
-        pm = sdk.PluginManager()
-        project_names = [p.project_name for p in pm.plugins.values()]
+
     requirements = XMLNode('requirements')
-    requirements.append(XMLNode('requirement', 'q2galaxy',
-                                type='package', version=q2galaxy.__version__))
+    if conda_meta.metapackage is None:
+        requirements.append(
+            XMLNode('requirement', 'q2galaxy',
+                    type='package', version=q2galaxy.__version__))
     for dep, version in conda_meta.iter_deps(*project_names,
                                              include_self=True):
         r = XMLNode('requirement', dep, type='package', version=version)
