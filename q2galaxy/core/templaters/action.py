@@ -60,7 +60,7 @@ def make_tool(conda_meta, plugin, action):
     q2galaxy_version = q2galaxy.__version__.replace('+', '.')
     tool = XMLNode(
         'tool', id=make_tool_id(plugin.id, action.id),
-        name=make_tool_name(plugin.name, action.id),
+        name=make_tool_name(plugin.id, action.id),
         version=f'{plugin_version}+{local}q2galaxy.{q2galaxy_version}')
     tool.append(XMLNode('description', action.name))
     tool.append(make_command(plugin, action))

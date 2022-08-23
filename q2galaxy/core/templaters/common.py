@@ -20,8 +20,9 @@ def make_tool_id(plugin_id, action_id):
     return '__'.join(['qiime2', plugin_id, action_id])
 
 
-def make_tool_name(plugin_name, action_id):
-    return ' '.join(['qiime2', plugin_name, action_id.replace('_', '-')])
+def make_tool_name(plugin_id, action_id):
+    return ' '.join(['qiime2', plugin_id.replace('_', '-'),
+                     action_id.replace('_', '-')])
 
 
 def make_tool_name_from_id(tool_id):
