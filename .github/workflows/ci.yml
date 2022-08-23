@@ -43,7 +43,7 @@ jobs:
     - name: install QIIME 2 core distro
       run: |
         epoch=2022.8
-        conda create -q -p ../test-env -c https://packages.qiime2.org/qiime2/$epoch/passed/core/ -c conda-forge -c bioconda qiime2-core
+        conda create -q -y -p ../test-env -c https://packages.qiime2.org/qiime2/$epoch/passed/core/ -c conda-forge -c bioconda qiime2-core
 
     - name: install dependencies
       shell: bash -l {0}
