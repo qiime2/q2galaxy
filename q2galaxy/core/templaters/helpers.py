@@ -225,6 +225,8 @@ class ColumnTabularCase(ParamCase):
         select = XMLNode('param', type='select',
                          name='type',
                          label=f'{self.name}: {str(self.spec.qiime_type)}')
+        conditional.append(select)
+
         from_tsv = XMLNode('option', 'Metadata from TSV', value='tsv')
         if self.spec.has_default():
             select.append(XMLNode('option', 'None (default)', value='none',
@@ -236,8 +238,6 @@ class ColumnTabularCase(ParamCase):
         select.append(from_tsv)
         select.append(XMLNode('option', 'Metadata from Artifact',
                               value='qza'))
-
-        conditional.append(select)
 
         when_tsv = XMLNode('when', value='tsv')
         tsv1 = XMLNode('param', type='data', format='tabular,qiime2.tabular',
@@ -327,7 +327,7 @@ class InputCase(ParamCase):
         return param
 
     def _make_validator(self):
-        _validator_set = repr(set(map(str, self.qiime_type)))
+        _validator_set = repr(list(sorted(set(map(str, self.qiime_type)))))
         validator = XMLNode(
             'validator',
             'hasattr(value.metadata, "semantic_type")'
@@ -435,16 +435,18 @@ class StrCase(ParamCase):
                     self.add_help(param)
                     self.add_label(param)
                     param = make_optional(param)
+                    # Do not add help as <conditional> doesn't permit it
                 else:
                     param.set('value', self.spec.default)
+                    self.add_help(param)
             else:
                 param.append(XMLNode(
                     # validator type='length' fails on empty input
                     'validator', 'value is not None and len(value) > 0',
                     type='expression',
                     message='Please verify this parameter.'))
+                self.add_help(param)
 
-        self.add_help(param)
         self.add_label(param)
 
         return param
@@ -579,8 +581,13 @@ class PrimitiveUnionCase(ParamCase):
                 when.append(hidden)
                 root.append(when)
 
+        used_choices = set()
         for choice in choices:
             value = galaxy_esc(choice)
+            if value in used_choices:
+                continue
+            else:
+                used_choices.add(value)
             option = XMLNode('option', self._display_func(choice), value=value)
             if self.spec.has_default() and self.spec.default == choice:
                 option.set('selected', 'true')

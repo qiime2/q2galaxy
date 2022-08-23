@@ -11,9 +11,10 @@ import pkg_resources
 
 
 class CondaMeta:
-    def __init__(self, prefix):
+    def __init__(self, prefix, metapackage=None):
         self.prefix = prefix
         self.meta = os.path.join(self.prefix, 'conda-meta')
+        self.metapackage = metapackage
         self._cache = {}
 
         self.meta_lookup = {}
@@ -42,6 +43,10 @@ class CondaMeta:
                     if not dep.startswith('__'))
 
     def iter_deps(self, *packages, include_self=True, _seen=None):
+        if self.metapackage is not None:
+            yield self.metapackage, self.get_version(self.metapackage)
+            return
+
         if _seen is None:
             _seen = set()
 
@@ -74,9 +79,9 @@ def get_conda_prefix():
 _CURRENT_META = None
 
 
-def find_conda_meta():
+def find_conda_meta(metapackage=None):
     global _CURRENT_META
     if _CURRENT_META is None:
         prefix = get_conda_prefix()
-        _CURRENT_META = CondaMeta(prefix)
+        _CURRENT_META = CondaMeta(prefix, metapackage=metapackage)
     return _CURRENT_META
