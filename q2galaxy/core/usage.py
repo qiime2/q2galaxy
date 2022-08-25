@@ -6,6 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 import os
+import re
 
 from qiime2.sdk.usage import Usage, UsageVariable
 
@@ -105,6 +106,7 @@ class GalaxyTestUsageVariable(GalaxyBaseUsageVariable):
         return name
 
     def assert_output_type(self, semantic_type):
+        semantic_type = re.escape(str(semantic_type))
         self._galaxy_has_line_matching(path='metadata.yaml',
                                        expression=f'type: {semantic_type}')
 
