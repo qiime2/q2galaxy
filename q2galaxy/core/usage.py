@@ -24,6 +24,7 @@ def collect_test_data(action, test_dir):
 class GalaxyBaseUsageVariable(UsageVariable):
     def to_interface_name(self, skip_ref=False):
         ext_map = {'artifact': 'qza',
+                   'result_collection': '/',
                    'visualization': 'qzv',
                    'metadata': 'tsv',
                    'column': '',
@@ -105,13 +106,23 @@ class GalaxyTestUsageVariable(GalaxyBaseUsageVariable):
             return '.'.join([self.prefix, name])
         return name
 
-    def assert_output_type(self, semantic_type):
+    def assert_output_type(self, semantic_type, key=None):
         semantic_type = re.escape(str(semantic_type))
-        self._galaxy_has_line_matching(path='metadata.yaml',
+        path = 'metadata.yaml'
+
+        if self.var_type == 'result_collection' and key:
+            path = key + '/metadata.yaml'
+
+        self._galaxy_has_line_matching(path=path,
                                        expression=f'type: {semantic_type}')
 
-    def assert_has_line_matching(self, path, expression):
-        self._galaxy_has_line_matching(path=f'data\\/{path}',
+    def assert_has_line_matching(self, path, expression, key=None):
+        path = f'data\\/{path}'
+
+        if self.var_type == 'result_collection' and key:
+            path = f'{key}\\/{path}'
+
+        self._galaxy_has_line_matching(path=path,
                                        expression=expression)
 
     def _galaxy_has_line_matching(self, path, expression):
@@ -149,6 +160,16 @@ class GalaxyTestUsage(GalaxyBaseUsage):
 
     def init_artifact(self, name, factory):
         var = super().init_artifact(name, factory)
+
+        if self.write_dir is not None:
+            status = var.write_file(self.write_dir)
+            self.created_files.append(status)
+
+        return var
+
+    # TODO: might need to loop through each item in the collection, we'll see
+    def init_result_collection(self, name, factory):
+        var = super().init_result_collection(name, factory)
 
         if self.write_dir is not None:
             status = var.write_file(self.write_dir)

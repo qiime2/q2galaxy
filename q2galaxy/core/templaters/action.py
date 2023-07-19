@@ -93,6 +93,7 @@ def make_filename(name, spec):
     return '.'.join([name, ext]), ext
 
 
+# TODO: this probably needs to change to do stuff with collections
 def make_output(name, spec):
     file_name, ext = make_filename(name, spec)
     XML_attrs = {}

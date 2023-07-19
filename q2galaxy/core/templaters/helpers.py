@@ -654,7 +654,7 @@ class PrimitiveUnionCase(ParamCase):
                 selected_branch = galaxy_name
                 break
         else:
-            raise Exception("How did this happen?")
+            raise Exception("%s, %s" % (self.arg, self.branches.values()))
 
         conditional = XMLNode(
             'conditional',
