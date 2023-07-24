@@ -694,7 +694,12 @@ class SimpleCollectionCase(ParamCase):
         if self.arg is None:
             return None
 
-        for idx, arg in enumerate(self.arg):
+        if isinstance(self.arg, dict):
+            _arg = self.arg.values()
+        else:
+            _arg = self.arg
+
+        for idx, arg in enumerate(_arg):
             root = XMLNode('repeat', name=self.name)
             to_repeat = identify_arg_case('element', self.inner_spec, arg)
             root.append(to_repeat.tests_xml())
