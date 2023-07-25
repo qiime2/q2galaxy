@@ -6,6 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 import qiime2.sdk as sdk
+from qiime2.core.type.util import is_collection_type
 
 import q2galaxy
 from q2galaxy.api.usage import GalaxyRSTInstructionsUsage
@@ -95,6 +96,12 @@ def make_filename(name, spec):
 
 # TODO: this probably needs to change to do stuff with collections
 def make_output(name, spec):
+    if is_collection_type(spec.qiime_type):
+        collection_node = XMLNode('collection', name=name, type='list')
+        discover_node = XMLNode('discover_datasets', pattern="__name_and_ext__", directory=name)
+        collection_node.append(discover_node)
+        return collection_node
+
     file_name, ext = make_filename(name, spec)
     XML_attrs = {}
     if ext == 'qza' or ext == 'qzv':

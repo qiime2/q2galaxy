@@ -9,6 +9,7 @@ import os
 import re
 
 from qiime2.sdk.usage import Usage, UsageVariable
+from qiime2.core.type.util import is_collection_type
 
 from q2galaxy.core.util import XMLNode
 from q2galaxy.core.templaters.helpers import signature_to_galaxy
@@ -106,24 +107,46 @@ class GalaxyTestUsageVariable(GalaxyBaseUsageVariable):
             return '.'.join([self.prefix, name])
         return name
 
-    def assert_output_type(self, semantic_type, key=None):
+    def assert_output_type(self, semantic_type, key='0'):
         semantic_type = re.escape(str(semantic_type))
         path = 'metadata.yaml'
 
-        if self.var_type == 'result_collection' and key:
-            path = key + '/metadata.yaml'
+        if key:
+            self._key_helper(path, expression=f'type: EchoOutput', key=key)
+            return
 
         self._galaxy_has_line_matching(path=path,
                                        expression=f'type: {semantic_type}')
 
-    def assert_has_line_matching(self, path, expression, key=None):
+    def assert_has_line_matching(self, path, expression, key='0'):
         path = f'data\\/{path}'
 
-        if self.var_type == 'result_collection' and key:
-            path = f'{key}\\/{path}'
+        if key:
+            # path = f'{key}\\/{path}'
+            self._key_helper(path, expression, key)
+            return
 
         self._galaxy_has_line_matching(path=path,
                                        expression=expression)
+
+    def _key_helper(self, path, expression, key):
+        output = self.use.output_lookup[self.name]
+        element = XMLNode('element', name=str(key), ftype="qza")
+        output.append(element)
+
+        contents = output.find('assert_contents')
+        if contents is None:
+            contents = XMLNode('assert_contents')
+            element.append(contents)
+
+        path = (r'[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]'
+                r'{3}-[0-9a-f]{12}\/') + path
+        archive = contents.find(f'has_archive_member[@path="{path}"]')
+        if archive is None:
+            archive = XMLNode('has_archive_member', path=path)
+            contents.append(archive)
+
+        archive.append(XMLNode('has_line_matching', expression=expression))
 
     def _galaxy_has_line_matching(self, path, expression):
         output = self.use.output_lookup[self.name]
@@ -200,9 +223,22 @@ class GalaxyTestUsage(GalaxyBaseUsage):
             for xml in test_xml:
                 self.xml.append(xml)
 
-        for output_name, output in outputs.items():
-            xml_out = XMLNode('output', name=output_name, ftype='qza')
-            self.output_lookup[output] = xml_out
+        for idx, (output_name, output) in enumerate(sig.outputs.items()):
+            if is_collection_type(output.qiime_type):
+                xml_out = XMLNode('output_collection', name=output_name, type='list')
+
+                # for i in range(2):
+                #     element = XMLNode('element', name=str(i), ftype='qza')
+                #     _assert = XMLNode('assert_contents')
+                #     matching = XMLNode('has_text_matching', expression=f"{idx}: {i}")
+
+                #     _assert.append(matching)
+                #     element.append(_assert)
+                #     xml_out.append(element)
+            else:
+                xml_out = XMLNode('output', name=output_name, ftype='qza')
+
+            self.output_lookup[output_name] = xml_out
             self.xml.append(xml_out)
 
         return vars_
