@@ -98,7 +98,9 @@ def make_filename(name, spec):
 def make_output(name, spec):
     if is_collection_type(spec.qiime_type):
         collection_node = XMLNode('collection', name=name, type='list')
-        discover_node = XMLNode('discover_datasets', pattern="__name_and_ext__", directory=name)
+        discover_node = XMLNode('discover_datasets',
+                                pattern="__name_and_ext__",
+                                directory=name)
         collection_node.append(discover_node)
         return collection_node
 
