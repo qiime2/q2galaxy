@@ -107,22 +107,27 @@ class GalaxyTestUsageVariable(GalaxyBaseUsageVariable):
             return '.'.join([self.prefix, name])
         return name
 
-    def assert_output_type(self, semantic_type, key='0'):
+    def assert_output_type(self, semantic_type, key=None):
         semantic_type = re.escape(str(semantic_type))
         path = 'metadata.yaml'
 
-        if key:
+        if key is not None:
+            key = str(key)
+
+        if self.var_type == 'result_collection' and key:
             self._key_helper(path, expression=f'type: EchoOutput', key=key)
             return
 
         self._galaxy_has_line_matching(path=path,
                                        expression=f'type: {semantic_type}')
 
-    def assert_has_line_matching(self, path, expression, key='0'):
+    def assert_has_line_matching(self, path, expression, key=None):
         path = f'data\\/{path}'
 
-        if key:
-            # path = f'{key}\\/{path}'
+        if key is not None:
+            key = str(key)
+
+        if self.var_type == 'result_collection' and key:
             self._key_helper(path, expression, key)
             return
 
@@ -134,10 +139,8 @@ class GalaxyTestUsageVariable(GalaxyBaseUsageVariable):
         element = XMLNode('element', name=str(key), ftype="qza")
         output.append(element)
 
-        contents = output.find('assert_contents')
-        if contents is None:
-            contents = XMLNode('assert_contents')
-            element.append(contents)
+        contents = XMLNode('assert_contents')
+        element.append(contents)
 
         path = (r'[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]'
                 r'{3}-[0-9a-f]{12}\/') + path
