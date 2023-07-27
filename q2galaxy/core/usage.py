@@ -228,7 +228,8 @@ class GalaxyTestUsage(GalaxyBaseUsage):
 
         for idx, (output_name, output) in enumerate(sig.outputs.items()):
             if is_collection_type(output.qiime_type):
-                xml_out = XMLNode('output_collection', name=output_name,
+                xml_out = XMLNode('output_collection',
+                                  name=output_name,
                                   type='list')
             else:
                 xml_out = XMLNode('output', name=output_name, ftype='qza')
