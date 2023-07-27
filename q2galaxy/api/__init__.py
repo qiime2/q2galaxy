@@ -51,11 +51,11 @@ def template_action_iter(plugin, action, directory, metapackage=None):
     filepath = os.path.join(directory, filename)
     test_dir = os.path.join(directory, 'test-data', '')
 
-    tool = _templaters.make_tool(meta, plugin, action)
-
-    yield from _template_tool_iter(tool, filepath)
     yield from _template_dir_iter(test_dir)
     yield from _usage.collect_test_data(action, test_dir)
+
+    tool = _templaters.make_tool(meta, plugin, action)
+    yield from _template_tool_iter(tool, filepath)
 
 
 def template_plugin_iter(plugin, directory, metapackage=None):
