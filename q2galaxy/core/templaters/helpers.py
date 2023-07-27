@@ -5,12 +5,14 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
+import os
 import itertools
 from qiime2.sdk.util import (interrogate_collection_type, is_semantic_type,
                              is_union, is_metadata_type,
                              is_metadata_column_type)
 from qiime2.plugin import Choices
 from qiime2.core.type.signature import ParameterSpec
+from qiime2 import ResultCollection
 
 from q2galaxy.core.util import XMLNode, galaxy_esc, galaxy_ui_var
 
@@ -338,8 +340,33 @@ class InputCase(ParamCase):
     def tests_xml(self):
         if self.arg is None:
             return
-        if self.multiple:
+
+        if self.spec.qiime_type.name == 'List':
             arg = ','.join(map(str, self.arg))
+        elif self.spec.qiime_type.name == 'Collection':
+            # NOTE: We currently have no way of knowing the contents of the
+            # collection without rendering it and loading it which is done here
+            #
+            # Additionally, this path should probably not be hardcoded. We can
+            # shuttle this information into this method from the entry point
+            # for the program, but that code gets a little ugly and wonky.
+            collection = ResultCollection.load(
+                os.path.join(
+                    './rendered/tests/suite_qiime2__mystery_stew/test-data',
+                    self.arg))
+
+            param_tag = XMLNode('param', name=self.name)
+            collection_tag = XMLNode('collection', type='list')
+            param_tag.append(collection_tag)
+
+            for element in collection.keys():
+                path = os.path.join('test_data', str(self.arg),
+                                    element + '.qza')
+                element_tag = XMLNode('element', name=element,
+                                      file=path, type='qza')
+                collection_tag.append(element_tag)
+
+            return param_tag
         else:
             arg = str(self.arg)
         return XMLNode('param', name=self.name, value=arg, ftype='qza')
