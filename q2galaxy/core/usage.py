@@ -115,7 +115,7 @@ class GalaxyTestUsageVariable(GalaxyBaseUsageVariable):
             key = str(key)
 
         if self.var_type == 'result_collection' and key:
-            self._key_helper(path, expression=f'type: EchoOutput', key=key)
+            self._key_helper(path, expression='type: EchoOutput', key=key)
             return
 
         self._galaxy_has_line_matching(path=path,
@@ -228,16 +228,8 @@ class GalaxyTestUsage(GalaxyBaseUsage):
 
         for idx, (output_name, output) in enumerate(sig.outputs.items()):
             if is_collection_type(output.qiime_type):
-                xml_out = XMLNode('output_collection', name=output_name, type='list')
-
-                # for i in range(2):
-                #     element = XMLNode('element', name=str(i), ftype='qza')
-                #     _assert = XMLNode('assert_contents')
-                #     matching = XMLNode('has_text_matching', expression=f"{idx}: {i}")
-
-                #     _assert.append(matching)
-                #     element.append(_assert)
-                #     xml_out.append(element)
+                xml_out = XMLNode('output_collection', name=output_name,
+                                  type='list')
             else:
                 xml_out = XMLNode('output', name=output_name, ftype='qza')
 
