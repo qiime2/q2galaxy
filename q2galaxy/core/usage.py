@@ -193,7 +193,6 @@ class GalaxyTestUsage(GalaxyBaseUsage):
 
         return var
 
-    # TODO: might need to loop through each item in the collection, we'll see
     def init_result_collection(self, name, factory):
         var = super().init_result_collection(name, factory)
 

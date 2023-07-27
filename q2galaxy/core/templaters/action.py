@@ -94,7 +94,6 @@ def make_filename(name, spec):
     return '.'.join([name, ext]), ext
 
 
-# TODO: this probably needs to change to do stuff with collections
 def make_output(name, spec):
     if is_collection_type(spec.qiime_type):
         collection_node = XMLNode('collection', name=name, type='list')
