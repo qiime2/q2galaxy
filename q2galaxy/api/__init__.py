@@ -54,7 +54,7 @@ def template_action_iter(plugin, action, directory, metapackage=None):
     yield from _template_dir_iter(test_dir)
     yield from _usage.collect_test_data(action, test_dir)
 
-    tool = _templaters.make_tool(meta, plugin, action)
+    tool = _templaters.make_tool(meta, plugin, action, test_dir)
     yield from _template_tool_iter(tool, filepath)
 
 

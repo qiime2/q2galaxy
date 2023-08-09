@@ -17,7 +17,7 @@ from qiime2 import ResultCollection
 from q2galaxy.core.util import XMLNode, galaxy_esc, galaxy_ui_var
 
 
-def signature_to_galaxy(signature, arguments=None):
+def signature_to_galaxy(signature, arguments=None, data_dir=None):
     for name, spec in itertools.chain(signature.inputs.items(),
                                       signature.parameters.items()):
         if arguments is None:
@@ -26,7 +26,7 @@ def signature_to_galaxy(signature, arguments=None):
             continue
         else:
             arg = arguments[name]
-        yield identify_arg_case(name, spec, arg)
+        yield identify_arg_case(name, spec, arg, data_dir=data_dir)
 
 
 def is_union_anywhere(qiime_type):
@@ -34,12 +34,12 @@ def is_union_anywhere(qiime_type):
         qiime_type.predicate is not None and is_union(qiime_type.predicate))
 
 
-def identify_arg_case(name, spec, arg):
+def identify_arg_case(name, spec, arg, data_dir=None):
     style = interrogate_collection_type(spec.qiime_type)
 
     if is_semantic_type(spec.qiime_type):
-        return InputCase(name, spec, arg,
-                         multiple=style.style is not None)
+        return InputCase(name, spec, arg, data_dir=data_dir,
+                         multiple=style.style is not None,)
 
     if style.style is None:  # not a collection
         if is_union_anywhere(spec.qiime_type):
@@ -296,8 +296,9 @@ class ColumnTabularCase(ParamCase):
 
 
 class InputCase(ParamCase):
-    def __init__(self, name, spec, arg=None, multiple=False):
+    def __init__(self, name, spec, arg=None, data_dir=None, multiple=False):
         super().__init__(name, spec, arg)
+        self.data_dir = data_dir
         self.multiple = multiple
 
         self.qiime_type = spec.qiime_type
@@ -310,19 +311,26 @@ class InputCase(ParamCase):
         return f"#: {self.arg}"
 
     def inputs_xml(self):
-        param = XMLNode('param', type='data', format='qza', name=self.name)
+        param = XMLNode('param', type='data', name=self.name)
         self.add_help(param)
         self.add_default(param)
         self.add_label(param)
-        if self.multiple:
-            param.set('multiple', 'true')
 
-        options = XMLNode('options',
-                          options_filter_attribute='metadata.semantic_type')
-        for t in self.qiime_type:
-            options.append(XMLNode('filter', type='add_value', value=repr(t)))
+        if self.spec.qiime_type.name == 'Collection':
+            param.set('type', 'data_collection')
+            param.set('collection_type', 'list')
+        else:
+            param.set('format', 'qza')
+            if self.multiple:
+                param.set('multiple', 'true')
 
-        param.append(options)
+            options = XMLNode('options',
+                            options_filter_attribute='metadata.semantic_type')
+            for t in self.qiime_type:
+                options.append(XMLNode('filter', type='add_value',
+                                        value=repr(t)))
+            param.append(options)
+
         if not self.multiple:
             param.append(self._make_validator())
 
@@ -341,29 +349,21 @@ class InputCase(ParamCase):
         if self.arg is None:
             return
 
-        if self.spec.qiime_type.name == 'List':
+        if self.spec.qiime_type.name == 'List' \
+                or self.spec.qiime_type == 'Set':
             arg = ','.join(map(str, self.arg))
         elif self.spec.qiime_type.name == 'Collection':
-            # NOTE: We currently have no way of knowing the contents of the
-            # collection without rendering it and loading it which is done here
-            #
-            # Additionally, this path should probably not be hardcoded. We can
-            # shuttle this information into this method from the entry point
-            # for the program, but that code gets a little ugly and wonky.
             collection = ResultCollection.load(
-                os.path.join(
-                    './rendered/tests/suite_qiime2__mystery_stew/test-data',
-                    self.arg))
+                os.path.join(self.data_dir, self.arg))
 
             param_tag = XMLNode('param', name=self.name)
             collection_tag = XMLNode('collection', type='list')
             param_tag.append(collection_tag)
 
             for element in collection.keys():
-                path = os.path.join('test_data', str(self.arg),
-                                    element + '.qza')
+                path = os.path.join(str(self.arg), element + '.qza')
                 element_tag = XMLNode('element', name=element,
-                                      file=path, type='qza')
+                                      value=path, type='qza')
                 collection_tag.append(element_tag)
 
             return param_tag
@@ -372,7 +372,7 @@ class InputCase(ParamCase):
         return XMLNode('param', name=self.name, value=arg, ftype='qza')
 
     def rst_instructions(self):
-        if not self.multiple:
+        if not self.multiple or self.spec.qiime_type.name == 'Collection':
             return super().rst_instructions()
         if self.arg is None:
             return 'Leave *"{self.name}"* without any selections.'
@@ -681,7 +681,7 @@ class PrimitiveUnionCase(ParamCase):
                 selected_branch = galaxy_name
                 break
         else:
-            raise Exception("%s, %s" % (self.arg, self.branches.values()))
+            raise Exception("Argument %s is incompatible with %s" % (self.arg, self.branches.values()))
 
         conditional = XMLNode(
             'conditional',

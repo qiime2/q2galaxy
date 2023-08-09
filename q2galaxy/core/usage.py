@@ -12,7 +12,7 @@ from qiime2.sdk.usage import Usage, UsageVariable
 from qiime2.core.type.util import is_collection_type
 
 from q2galaxy.core.util import XMLNode
-from q2galaxy.core.templaters.helpers import signature_to_galaxy
+from q2galaxy.core.templaters.helpers import signature_to_galaxy, InputCase
 
 
 def collect_test_data(action, test_dir):
@@ -172,12 +172,16 @@ class GalaxyTestUsageVariable(GalaxyBaseUsageVariable):
 class GalaxyTestUsage(GalaxyBaseUsage):
     _USE_TSV_INDEX = True
 
-    def __init__(self, example_path, write_dir=None):
+    def __init__(self, example_path, write_dir=None, data_dir=None):
         super().__init__()
         self.prefix = f'{example_path[0].id}.test{example_path[1]}'
         self.xml = XMLNode('test')
         self.output_lookup = {}
         self.write_dir = write_dir
+        if data_dir is None:
+            self.data_dir = self.write_dir
+        else:
+            self.data_dir = data_dir
         self.created_files = []
 
     def usage_variable(self, name, factory, var_type):
@@ -216,7 +220,7 @@ class GalaxyTestUsage(GalaxyBaseUsage):
 
         sig = action.get_action().signature
         mapped = inputs.map_variables(lambda v: v.to_interface_name())
-        for case in signature_to_galaxy(sig, mapped):
+        for case in signature_to_galaxy(sig, mapped, data_dir=self.data_dir):
             test_xml = case.tests_xml()
             if test_xml is None:
                 continue
@@ -225,7 +229,7 @@ class GalaxyTestUsage(GalaxyBaseUsage):
             for xml in test_xml:
                 self.xml.append(xml)
 
-        for idx, (output_name, output) in enumerate(sig.outputs.items()):
+        for output_name, output in sig.outputs.items():
             if is_collection_type(output.qiime_type):
                 xml_out = XMLNode('output_collection',
                                   name=output_name,

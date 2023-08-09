@@ -18,7 +18,7 @@ from q2galaxy.core.templaters.common import (
 from q2galaxy.core.templaters.helpers import signature_to_galaxy
 
 
-def make_tool(conda_meta, plugin, action):
+def make_tool(conda_meta, plugin, action, test_dir):
     signature = action.signature
 
     inputs = XMLNode('inputs')
@@ -66,20 +66,20 @@ def make_tool(conda_meta, plugin, action):
     tool.append(XMLNode('description', action.name))
     tool.append(make_command(plugin, action))
     tool.append(make_version_command(plugin))
-    tool.append(make_config())
+    tool.append(make_config(action=True))
     tool.append(inputs)
     tool.append(outputs)
-    tool.append(make_tests(action))
+    tool.append(make_tests(action, test_dir))
     tool.append(make_help(plugin, action))
     tool.append(make_citations(plugin, action))
     tool.append(make_requirements(conda_meta, plugin.project_name))
     return tool
 
 
-def make_tests(action):
+def make_tests(action, test_dir):
     tests = XMLNode('tests')
     for idx, example in enumerate(action.examples.values()):
-        use = GalaxyTestUsage(example_path=(action, idx))
+        use = GalaxyTestUsage(example_path=(action, idx), data_dir=test_dir)
         example(use)
         tests.append(use.xml)
 
