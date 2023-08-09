@@ -324,11 +324,11 @@ class InputCase(ParamCase):
             if self.multiple:
                 param.set('multiple', 'true')
 
-            options = XMLNode('options',
-                            options_filter_attribute='metadata.semantic_type')
+            options = XMLNode(
+                'options', options_filter_attribute='metadata.semantic_type')
             for t in self.qiime_type:
                 options.append(XMLNode('filter', type='add_value',
-                                        value=repr(t)))
+                                       value=repr(t)))
             param.append(options)
 
         if not self.multiple:
@@ -681,7 +681,8 @@ class PrimitiveUnionCase(ParamCase):
                 selected_branch = galaxy_name
                 break
         else:
-            raise Exception("Argument %s is incompatible with %s" % (self.arg, self.branches.values()))
+            raise Exception("Argument %s is incompatible with %s" %
+                            (self.arg, self.branches.values()))
 
         conditional = XMLNode(
             'conditional',

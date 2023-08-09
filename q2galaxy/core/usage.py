@@ -12,7 +12,7 @@ from qiime2.sdk.usage import Usage, UsageVariable
 from qiime2.core.type.util import is_collection_type
 
 from q2galaxy.core.util import XMLNode
-from q2galaxy.core.templaters.helpers import signature_to_galaxy, InputCase
+from q2galaxy.core.templaters.helpers import signature_to_galaxy
 
 
 def collect_test_data(action, test_dir):
