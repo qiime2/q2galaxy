@@ -152,7 +152,13 @@ def _execute_action(action, action_kwargs):
 @error_handler(header="Unexpected error saving results in q2galaxy: ")
 def _save_results(results):
     for name, result in zip(results._fields, results):
-        location = result.save(name)
+        # For ResultCollections we want to avoid writing an order file because
+        # galaxy will interpret it as just another dataset in the collection
+        # which is not desirable
+        if isinstance(result, sdk.ResultCollection):
+            location = result._save_galaxy_(name)
+        else:
+            location = result.save(name)
         print(f"Saved {result.type} to: {location}", file=sys.stdout)
 
 
