@@ -86,11 +86,11 @@ def _convert_arguments(signature, inputs):
                     processed_input = {}
 
                     for x in v:
-                        filename = os.path.basename(x['staging_path'])
-                        key = filename.rsplit('.', 1)[0]
-                        artifact = sdk.Artifact.load(x['source_path'])
-
-                        processed_input[key] = artifact
+                        if x['source_path'] is not None:
+                            filename = os.path.basename(x['staging_path'])
+                            key = filename.rsplit('.', 1)[0]
+                            artifact = sdk.Artifact.load(x['source_path'])
+                            processed_input[key] = artifact
 
                     # Handle unprovided optional collections
                     if processed_input == {}:
