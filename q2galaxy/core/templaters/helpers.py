@@ -346,10 +346,12 @@ class InputCase(ParamCase):
 
         if self.multiple:
             if self.spec.qiime_type.name == 'Collection':
+                collection = ResultCollection.load(
+                    os.path.join(self.data_dir, self.arg))
                 arg = []
-                for elem in os.listdir(os.path.join(self.data_dir, self.arg)):
-                    if elem != '.order':
-                        arg.append(os.path.join(self.arg, elem))
+                for elem in collection.keys():
+                    arg.append(str(
+                        os.path.join(self.arg, elem)) + collection.extension)
             else:
                 arg = self.arg
 
