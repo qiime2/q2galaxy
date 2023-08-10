@@ -25,7 +25,8 @@ def collect_test_data(action, test_dir):
 class GalaxyBaseUsageVariable(UsageVariable):
     def to_interface_name(self, skip_ref=False):
         ext_map = {'artifact': 'qza',
-                   'result_collection': '/',
+                   'artifact_collection': '/',
+                   'visualization_collection': '/',
                    'visualization': 'qzv',
                    'metadata': 'tsv',
                    'column': '',

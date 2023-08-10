@@ -81,7 +81,7 @@ def _convert_arguments(signature, inputs):
                     if processed_input == []:
                         processed_input = None
 
-                    processed_inputs[k] = processed_inputs
+                    processed_inputs[k] = processed_input
                 elif type_.name == 'Collection':
                     processed_input = {}
 

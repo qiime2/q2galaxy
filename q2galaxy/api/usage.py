@@ -40,8 +40,9 @@ def _list_to_lines(bullets, indent):
 
 
 class GalaxyRSTInstructionsUsage(GalaxyBaseUsage):
-    def __init__(self):
+    def __init__(self, data_dir):
         super().__init__()
+        self.data_dir = data_dir
         self.recorder = []
 
     def _add_instructions(self, rst):
@@ -61,7 +62,7 @@ class GalaxyRSTInstructionsUsage(GalaxyBaseUsage):
 
         standard_cases = []
         advanced_cases = []
-        for case in signature_to_galaxy(sig, mapped):
+        for case in signature_to_galaxy(sig, mapped, data_dir=self.data_dir):
             if case.is_advanced():
                 advanced_cases.append(case)
             else:

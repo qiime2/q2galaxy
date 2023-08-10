@@ -70,7 +70,7 @@ def make_tool(conda_meta, plugin, action, test_dir):
     tool.append(inputs)
     tool.append(outputs)
     tool.append(make_tests(action, test_dir))
-    tool.append(make_help(plugin, action))
+    tool.append(make_help(plugin, action, test_dir))
     tool.append(make_citations(plugin, action))
     tool.append(make_requirements(conda_meta, plugin.project_name))
     return tool
@@ -111,7 +111,7 @@ def make_output(name, spec):
                    **XML_attrs)
 
 
-def make_help(plugin, action):
+def make_help(plugin, action, data_dir):
     help_ = rst_header(' '.join(['QIIME 2:', plugin.name,
                                  action.id.replace('_', '-')]), 1)
     help_ += action.name + '\n'
@@ -130,7 +130,7 @@ def make_help(plugin, action):
     if action.examples:
         help_ += rst_header("Examples:", 2)
         for example_name, example in action.examples.items():
-            use = GalaxyRSTInstructionsUsage()
+            use = GalaxyRSTInstructionsUsage(data_dir)
             example(use)
 
             help_ += rst_header(example_name, 3)

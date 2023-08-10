@@ -311,25 +311,20 @@ class InputCase(ParamCase):
         return f"#: {self.arg}"
 
     def inputs_xml(self):
-        param = XMLNode('param', type='data', name=self.name)
+        param = XMLNode('param', format='qza', type='data', name=self.name)
         self.add_help(param)
         self.add_default(param)
         self.add_label(param)
 
-        if self.spec.qiime_type.name == 'Collection':
-            param.set('type', 'data_collection')
-            param.set('collection_type', 'list')
-        else:
-            param.set('format', 'qza')
-            if self.multiple:
-                param.set('multiple', 'true')
+        if self.multiple:
+            param.set('multiple', 'true')
 
-            options = XMLNode(
-                'options', options_filter_attribute='metadata.semantic_type')
-            for t in self.qiime_type:
-                options.append(XMLNode('filter', type='add_value',
-                                       value=repr(t)))
-            param.append(options)
+        options = XMLNode(
+            'options', options_filter_attribute='metadata.semantic_type')
+        for t in self.qiime_type:
+            options.append(XMLNode('filter', type='add_value',
+                                    value=repr(t)))
+        param.append(options)
 
         if not self.multiple:
             param.append(self._make_validator())
@@ -349,24 +344,16 @@ class InputCase(ParamCase):
         if self.arg is None:
             return
 
-        if self.spec.qiime_type.name == 'List' \
-                or self.spec.qiime_type == 'Set':
-            arg = ','.join(map(str, self.arg))
-        elif self.spec.qiime_type.name == 'Collection':
-            collection = ResultCollection.load(
-                os.path.join(self.data_dir, self.arg))
+        if self.multiple:
+            if self.spec.qiime_type.name == 'Collection':
+                arg = []
+                for elem in os.listdir(os.path.join(self.data_dir, self.arg)):
+                    if elem != '.order':
+                        arg.append(os.path.join(self.arg, elem))
+            else:
+                arg = self.arg
 
-            param_tag = XMLNode('param', name=self.name)
-            collection_tag = XMLNode('collection', type='list')
-            param_tag.append(collection_tag)
-
-            for element in collection.keys():
-                path = os.path.join(str(self.arg), element + '.qza')
-                element_tag = XMLNode('element', name=element,
-                                      value=path, type='qza')
-                collection_tag.append(element_tag)
-
-            return param_tag
+            arg = ','.join(map(str, arg))
         else:
             arg = str(self.arg)
         return XMLNode('param', name=self.name, value=arg, ftype='qza')
