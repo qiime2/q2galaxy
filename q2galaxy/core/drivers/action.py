@@ -83,17 +83,20 @@ def _convert_arguments(signature, inputs):
 
                     processed_inputs[k] = processed_input
                 elif type_.name == 'Collection':
-                    processed_input = {}
+                    processed_input = sdk.ResultCollection()
 
                     for x in v:
                         if x['source_path'] is not None:
                             filename = os.path.basename(x['staging_path'])
-                            key = filename.rsplit('.', 1)[0]
+                            # Get rid of our file extensions before using the
+                            # name as a key
+                            key = filename.split('.qza')[0]
+                            key = key.split('.qzv')[0]
                             artifact = sdk.Artifact.load(x['source_path'])
                             processed_input[key] = artifact
 
                     # Handle unprovided optional collections
-                    if processed_input == {}:
+                    if processed_input.collection == {}:
                         processed_input = None
 
                     processed_inputs[k] = processed_input
