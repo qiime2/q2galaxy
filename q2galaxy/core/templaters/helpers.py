@@ -311,7 +311,7 @@ class InputCase(ParamCase):
         return f"#: {self.arg}"
 
     def inputs_xml(self):
-        param = XMLNode('param', format='qza', type='data', name=self.name)
+        param = XMLNode('param', type='data', format='qza', name=self.name)
         self.add_help(param)
         self.add_default(param)
         self.add_label(param)
@@ -322,8 +322,7 @@ class InputCase(ParamCase):
         options = XMLNode(
             'options', options_filter_attribute='metadata.semantic_type')
         for t in self.qiime_type:
-            options.append(XMLNode('filter', type='add_value',
-                                    value=repr(t)))
+            options.append(XMLNode('filter', type='add_value', value=repr(t)))
         param.append(options)
 
         if not self.multiple:
