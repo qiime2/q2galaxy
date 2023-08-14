@@ -36,6 +36,9 @@ test:
   # commands:
   #   - q2galaxy template tests $(mktemp -d)
 
+  commands:
+    - QIIMETEST= py.test --pyargs q2cli
+
 about:
   home: https://qiime2.org
   license: BSD-3-Clause
