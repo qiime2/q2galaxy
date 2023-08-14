@@ -40,7 +40,7 @@ def _list_to_lines(bullets, indent):
 
 
 class GalaxyRSTInstructionsUsage(GalaxyBaseUsage):
-    def __init__(self, data_dir):
+    def __init__(self, data_dir=None):
         super().__init__()
         self.data_dir = data_dir
         self.recorder = []
