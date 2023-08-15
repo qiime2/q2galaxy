@@ -112,12 +112,8 @@ class GalaxyTestUsageVariable(GalaxyBaseUsageVariable):
         expression = f'type: {re.escape(str(semantic_type))}'
         path = 'metadata.yaml'
 
-        if key is not None:
-            key = str(key)
-
-        if self.var_type in self.COLLECTION_VAR_TYPES and key:
-            self._assert_element_has_line_matching(path, expression=expression,
-                                                   key=key)
+        if self.var_type in self.COLLECTION_VAR_TYPES:
+            self._assert_element_has_line_matching(path, expression, key)
             return
 
         self._galaxy_has_line_matching(path=path, expression=expression)
@@ -125,22 +121,32 @@ class GalaxyTestUsageVariable(GalaxyBaseUsageVariable):
     def assert_has_line_matching(self, path, expression, key=None):
         path = f'data\\/{path}'
 
-        if key is not None:
-            key = str(key)
-
-        if self.var_type in self.COLLECTION_VAR_TYPES and key:
+        if self.var_type in self.COLLECTION_VAR_TYPES:
             self._assert_element_has_line_matching(path, expression, key)
             return
 
         self._galaxy_has_line_matching(path=path, expression=expression)
 
     def _assert_element_has_line_matching(self, path, expression, key):
-        output = self.use.output_lookup[self.name]
-        element = XMLNode('element', name=str(key), ftype="qza")
-        output.append(element)
+        # We cannot test the type of the output collection as a whole in galaxy
+        # in the same way as we can in other interfaces. There is nothing
+        # indicating that this collection is supposed to be specifically a
+        # Collection[EchoOutput] for instance
+        if key is None:
+            return
 
-        contents = XMLNode('assert_contents')
-        element.append(contents)
+        key = str(key)
+        output = self.use.output_lookup[self.name]
+        keys = self.use.keys_lookup[self.name]
+
+        if key not in keys:
+            element = XMLNode('element', name=key, ftype="qza")
+            output.append(element)
+            contents = XMLNode('assert_contents')
+            element.append(contents)
+            self.use.keys_lookup[self.name][key] = contents
+        else:
+            contents = self.use.keys_lookup[self.name][key]
 
         path = (r'[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]'
                 r'{3}-[0-9a-f]{12}\/') + path
@@ -177,6 +183,7 @@ class GalaxyTestUsage(GalaxyBaseUsage):
         self.prefix = f'{example_path[0].id}.test{example_path[1]}'
         self.xml = XMLNode('test')
         self.output_lookup = {}
+        self.keys_lookup = {}
         self.write_dir = write_dir
         if data_dir is None:
             self.data_dir = self.write_dir
@@ -238,6 +245,10 @@ class GalaxyTestUsage(GalaxyBaseUsage):
                 xml_out = XMLNode('output', name=output_name, ftype='qza')
 
             self.output_lookup[output_name] = xml_out
+
+            if output.qiime_type.name == 'Collection':
+                self.keys_lookup[output_name] = {}
+
             self.xml.append(xml_out)
 
         return vars_
