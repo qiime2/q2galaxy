@@ -109,18 +109,17 @@ class GalaxyTestUsageVariable(GalaxyBaseUsageVariable):
         return name
 
     def assert_output_type(self, semantic_type, key=None):
-        semantic_type = re.escape(str(semantic_type))
+        expression = f'type: {re.escape(str(semantic_type))}'
         path = 'metadata.yaml'
 
         if key is not None:
             key = str(key)
 
         if self.var_type in self.COLLECTION_VAR_TYPES and key:
-            self._key_helper(path, expression='type: EchoOutput', key=key)
+            self._key_helper(path, expression=expression, key=key)
             return
 
-        self._galaxy_has_line_matching(path=path,
-                                       expression=f'type: {semantic_type}')
+        self._galaxy_has_line_matching(path=path, expression=expression)
 
     def assert_has_line_matching(self, path, expression, key=None):
         path = f'data\\/{path}'
@@ -132,8 +131,7 @@ class GalaxyTestUsageVariable(GalaxyBaseUsageVariable):
             self._key_helper(path, expression, key)
             return
 
-        self._galaxy_has_line_matching(path=path,
-                                       expression=expression)
+        self._galaxy_has_line_matching(path=path, expression=expression)
 
     def _key_helper(self, path, expression, key):
         output = self.use.output_lookup[self.name]
