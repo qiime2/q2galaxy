@@ -116,7 +116,8 @@ class GalaxyTestUsageVariable(GalaxyBaseUsageVariable):
             key = str(key)
 
         if self.var_type in self.COLLECTION_VAR_TYPES and key:
-            self._key_helper(path, expression=expression, key=key)
+            self._assert_element_has_line_matching(path, expression=expression,
+                                                   key=key)
             return
 
         self._galaxy_has_line_matching(path=path, expression=expression)
@@ -128,12 +129,12 @@ class GalaxyTestUsageVariable(GalaxyBaseUsageVariable):
             key = str(key)
 
         if self.var_type in self.COLLECTION_VAR_TYPES and key:
-            self._key_helper(path, expression, key)
+            self._assert_element_has_line_matching(path, expression, key)
             return
 
         self._galaxy_has_line_matching(path=path, expression=expression)
 
-    def _key_helper(self, path, expression, key):
+    def _assert_element_has_line_matching(self, path, expression, key):
         output = self.use.output_lookup[self.name]
         element = XMLNode('element', name=str(key), ftype="qza")
         output.append(element)
