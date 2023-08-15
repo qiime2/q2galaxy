@@ -159,7 +159,7 @@ def _save_results(results):
         # galaxy will interpret it as just another dataset in the collection
         # which is not desirable
         if isinstance(result, sdk.ResultCollection):
-            location = result._save_galaxy_(name)
+            location = result.save_unordered(name)
         else:
             location = result.save(name)
         print(f"Saved {result.type} to: {location}", file=sys.stdout)
