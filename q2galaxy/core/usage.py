@@ -115,7 +115,7 @@ class GalaxyTestUsageVariable(GalaxyBaseUsageVariable):
         if key is not None:
             key = str(key)
 
-        if self.var_type == 'result_collection' and key:
+        if self.var_type in self.COLLECTION_VAR_TYPES and key:
             self._key_helper(path, expression='type: EchoOutput', key=key)
             return
 
@@ -128,7 +128,7 @@ class GalaxyTestUsageVariable(GalaxyBaseUsageVariable):
         if key is not None:
             key = str(key)
 
-        if self.var_type == 'result_collection' and key:
+        if self.var_type in self.COLLECTION_VAR_TYPES and key:
             self._key_helper(path, expression, key)
             return
 
