@@ -39,7 +39,7 @@ def identify_arg_case(name, spec, arg, data_dir=None):
 
     if is_semantic_type(spec.qiime_type):
         return InputCase(name, spec, arg, data_dir=data_dir,
-                         multiple=style.style is not None,)
+                         multiple=style.style is not None)
 
     if style.style is None:  # not a collection
         if is_union_anywhere(spec.qiime_type):
