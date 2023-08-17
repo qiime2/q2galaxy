@@ -5,17 +5,19 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
+import os
 import itertools
 from qiime2.sdk.util import (interrogate_collection_type, is_semantic_type,
                              is_union, is_metadata_type,
                              is_metadata_column_type)
 from qiime2.plugin import Choices
 from qiime2.core.type.signature import ParameterSpec
+from qiime2 import ResultCollection
 
 from q2galaxy.core.util import XMLNode, galaxy_esc, galaxy_ui_var
 
 
-def signature_to_galaxy(signature, arguments=None):
+def signature_to_galaxy(signature, arguments=None, data_dir=None):
     for name, spec in itertools.chain(signature.inputs.items(),
                                       signature.parameters.items()):
         if arguments is None:
@@ -24,7 +26,7 @@ def signature_to_galaxy(signature, arguments=None):
             continue
         else:
             arg = arguments[name]
-        yield identify_arg_case(name, spec, arg)
+        yield identify_arg_case(name, spec, arg, data_dir=data_dir)
 
 
 def is_union_anywhere(qiime_type):
@@ -32,11 +34,11 @@ def is_union_anywhere(qiime_type):
         qiime_type.predicate is not None and is_union(qiime_type.predicate))
 
 
-def identify_arg_case(name, spec, arg):
+def identify_arg_case(name, spec, arg, data_dir=None):
     style = interrogate_collection_type(spec.qiime_type)
 
     if is_semantic_type(spec.qiime_type):
-        return InputCase(name, spec, arg,
+        return InputCase(name, spec, arg, data_dir=data_dir,
                          multiple=style.style is not None)
 
     if style.style is None:  # not a collection
@@ -294,8 +296,9 @@ class ColumnTabularCase(ParamCase):
 
 
 class InputCase(ParamCase):
-    def __init__(self, name, spec, arg=None, multiple=False):
+    def __init__(self, name, spec, arg=None, data_dir=None, multiple=False):
         super().__init__(name, spec, arg)
+        self.data_dir = data_dir
         self.multiple = multiple
 
         self.qiime_type = spec.qiime_type
@@ -312,15 +315,16 @@ class InputCase(ParamCase):
         self.add_help(param)
         self.add_default(param)
         self.add_label(param)
+
         if self.multiple:
             param.set('multiple', 'true')
 
-        options = XMLNode('options',
-                          options_filter_attribute='metadata.semantic_type')
+        options = XMLNode(
+            'options', options_filter_attribute='metadata.semantic_type')
         for t in self.qiime_type:
             options.append(XMLNode('filter', type='add_value', value=repr(t)))
-
         param.append(options)
+
         if not self.multiple:
             param.append(self._make_validator())
 
@@ -338,14 +342,25 @@ class InputCase(ParamCase):
     def tests_xml(self):
         if self.arg is None:
             return
+
         if self.multiple:
-            arg = ','.join(map(str, self.arg))
+            if self.spec.qiime_type.name == 'Collection':
+                collection = ResultCollection.load(
+                    os.path.join(self.data_dir, self.arg))
+                arg = []
+                for elem in collection.keys():
+                    arg.append(str(
+                        os.path.join(self.arg, elem)) + collection.extension)
+            else:
+                arg = self.arg
+
+            arg = ','.join(map(str, arg))
         else:
             arg = str(self.arg)
         return XMLNode('param', name=self.name, value=arg, ftype='qza')
 
     def rst_instructions(self):
-        if not self.multiple:
+        if not self.multiple or self.spec.qiime_type.name == 'Collection':
             return super().rst_instructions()
         if self.arg is None:
             return 'Leave *"{self.name}"* without any selections.'
@@ -654,7 +669,8 @@ class PrimitiveUnionCase(ParamCase):
                 selected_branch = galaxy_name
                 break
         else:
-            raise Exception("How did this happen?")
+            raise Exception("Argument %s is incompatible with %s" %
+                            (self.arg, self.branches.values()))
 
         conditional = XMLNode(
             'conditional',
@@ -694,7 +710,12 @@ class SimpleCollectionCase(ParamCase):
         if self.arg is None:
             return None
 
-        for idx, arg in enumerate(self.arg):
+        if isinstance(self.arg, dict):
+            _arg = self.arg.values()
+        else:
+            _arg = self.arg
+
+        for idx, arg in enumerate(_arg):
             root = XMLNode('repeat', name=self.name)
             to_repeat = identify_arg_case('element', self.inner_spec, arg)
             root.append(to_repeat.tests_xml())

@@ -6,6 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 import qiime2.sdk as sdk
+from qiime2.core.type.util import is_collection_type
 
 import q2galaxy
 from q2galaxy.api.usage import GalaxyRSTInstructionsUsage
@@ -17,7 +18,7 @@ from q2galaxy.core.templaters.common import (
 from q2galaxy.core.templaters.helpers import signature_to_galaxy
 
 
-def make_tool(conda_meta, plugin, action):
+def make_tool(conda_meta, plugin, action, test_dir):
     signature = action.signature
 
     inputs = XMLNode('inputs')
@@ -65,20 +66,20 @@ def make_tool(conda_meta, plugin, action):
     tool.append(XMLNode('description', action.name))
     tool.append(make_command(plugin, action))
     tool.append(make_version_command(plugin))
-    tool.append(make_config())
+    tool.append(make_config(action=True))
     tool.append(inputs)
     tool.append(outputs)
-    tool.append(make_tests(action))
-    tool.append(make_help(plugin, action))
+    tool.append(make_tests(action, test_dir))
+    tool.append(make_help(plugin, action, test_dir))
     tool.append(make_citations(plugin, action))
     tool.append(make_requirements(conda_meta, plugin.project_name))
     return tool
 
 
-def make_tests(action):
+def make_tests(action, test_dir):
     tests = XMLNode('tests')
     for idx, example in enumerate(action.examples.values()):
-        use = GalaxyTestUsage(example_path=(action, idx))
+        use = GalaxyTestUsage(example_path=(action, idx), data_dir=test_dir)
         example(use)
         tests.append(use.xml)
 
@@ -94,6 +95,14 @@ def make_filename(name, spec):
 
 
 def make_output(name, spec):
+    if is_collection_type(spec.qiime_type):
+        collection_node = XMLNode('collection', name=name, type='list')
+        discover_node = XMLNode('discover_datasets',
+                                pattern="__name_and_ext__",
+                                directory=name)
+        collection_node.append(discover_node)
+        return collection_node
+
     file_name, ext = make_filename(name, spec)
     XML_attrs = {}
     if ext == 'qza' or ext == 'qzv':
@@ -102,7 +111,7 @@ def make_output(name, spec):
                    **XML_attrs)
 
 
-def make_help(plugin, action):
+def make_help(plugin, action, data_dir):
     help_ = rst_header(' '.join(['QIIME 2:', plugin.name,
                                  action.id.replace('_', '-')]), 1)
     help_ += action.name + '\n'
@@ -121,7 +130,7 @@ def make_help(plugin, action):
     if action.examples:
         help_ += rst_header("Examples:", 2)
         for example_name, example in action.examples.items():
-            use = GalaxyRSTInstructionsUsage()
+            use = GalaxyRSTInstructionsUsage(data_dir)
             example(use)
 
             help_ += rst_header(example_name, 3)

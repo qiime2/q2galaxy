@@ -5,6 +5,7 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
+import os
 import sys
 
 import qiime2
@@ -69,7 +70,39 @@ def _convert_arguments(signature, inputs):
 
         elif qiime2.sdk.util.is_collection_type(type_):
             if k in signature.inputs:
-                processed_inputs[k] = [sdk.Artifact.load(x) for x in v]
+                if type_.name == 'List' or type_.name == 'Set':
+                    processed_input = []
+
+                    for x in v:
+                        if (path := x['source_path']) is not None:
+                            processed_input.append(sdk.Artifact.load(path))
+
+                    # Handle unprovided optional lists or sets
+                    if processed_input == []:
+                        processed_input = None
+
+                    processed_inputs[k] = processed_input
+                elif type_.name == 'Collection':
+                    processed_input = sdk.ResultCollection()
+
+                    for x in v:
+                        if x['source_path'] is not None:
+                            filename = os.path.basename(x['staging_path'])
+                            # Get rid of our file extensions before using the
+                            # name as a key
+                            key = filename.split('.qza')[0]
+                            key = key.split('.qzv')[0]
+                            artifact = sdk.Artifact.load(x['source_path'])
+                            processed_input[key] = artifact
+
+                    # Handle unprovided optional collections
+                    if processed_input.collection == {}:
+                        processed_input = None
+
+                    processed_inputs[k] = processed_input
+                else:
+                    raise NotImplementedError(
+                        f"Collection type '{type}' not supported")
             elif v == []:
                 if signature.parameters[k].has_default():
                     processed_inputs[k] = signature.parameters[k].default
@@ -86,7 +119,11 @@ def _convert_arguments(signature, inputs):
             processed_inputs[k] = _convert_metadata(type_, inputs[k], k)
 
         elif k in signature.inputs:
-            processed_inputs[k] = sdk.Artifact.load(v)
+            # Handle unprovided artifact
+            if v['source_path'] is None:
+                processed_inputs[k] = None
+            else:
+                processed_inputs[k] = sdk.Artifact.load(v['source_path'])
 
         else:
             processed_inputs[k] = v
@@ -118,7 +155,13 @@ def _execute_action(action, action_kwargs):
 @error_handler(header="Unexpected error saving results in q2galaxy: ")
 def _save_results(results):
     for name, result in zip(results._fields, results):
-        location = result.save(name)
+        # For ResultCollections we want to avoid writing an order file because
+        # galaxy will interpret it as just another dataset in the collection
+        # which is not desirable
+        if isinstance(result, sdk.ResultCollection):
+            location = result.save_unordered(name)
+        else:
+            location = result.save(name)
         print(f"Saved {result.type} to: {location}", file=sys.stdout)
 
 
@@ -133,15 +176,16 @@ def _convert_metadata(input_, value, param):
 
     mds = []
     for entry in value:
+        source_path = entry['source']['source_path']
         if entry['type'] == 'tsv':
             try:
-                md = qiime2.Metadata.load(entry['source'])
+                md = qiime2.Metadata.load(source_path)
             except Exception as e:
                 raise ValueError(
                     "There was an issue with loading the file provided to %r"
                     " as metadata:" % param) from e
         else:
-            art = qiime2.Artifact.load(entry['source'])
+            art = qiime2.Artifact.load(source_path)
             try:
                 md = art.view(qiime2.Metadata)
             except Exception as e:

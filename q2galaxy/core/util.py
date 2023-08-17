@@ -96,6 +96,7 @@ def get_mystery_stew():
         primitive_unions=True,
         metadata=True,
         collections=True,
+        output_collections=True
     )
 
     pm.add_plugin(test_plugin)

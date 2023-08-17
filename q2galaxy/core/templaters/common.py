@@ -30,9 +30,15 @@ def make_tool_name_from_id(tool_id):
     return make_tool_name(plugin, action)
 
 
-def make_config():
+def make_config(action=False):
     configfiles = XMLNode('configfiles')
-    configfiles.append(XMLNode('inputs', name='inputs', data_style='paths'))
+
+    if action:
+        style = 'staging_path_and_source_path'
+    else:
+        style = 'paths'
+
+    configfiles.append(XMLNode('inputs', name='inputs', data_style=style))
     return configfiles
 
 

@@ -9,6 +9,7 @@ import os
 import re
 
 from qiime2.sdk.usage import Usage, UsageVariable
+from qiime2.core.type.util import is_collection_type
 
 from q2galaxy.core.util import XMLNode
 from q2galaxy.core.templaters.helpers import signature_to_galaxy
@@ -24,6 +25,8 @@ def collect_test_data(action, test_dir):
 class GalaxyBaseUsageVariable(UsageVariable):
     def to_interface_name(self, skip_ref=False):
         ext_map = {'artifact': 'qza',
+                   'artifact_collection': '/',
+                   'visualization_collection': '/',
                    'visualization': 'qzv',
                    'metadata': 'tsv',
                    'column': '',
@@ -105,14 +108,54 @@ class GalaxyTestUsageVariable(GalaxyBaseUsageVariable):
             return '.'.join([self.prefix, name])
         return name
 
-    def assert_output_type(self, semantic_type):
-        semantic_type = re.escape(str(semantic_type))
-        self._galaxy_has_line_matching(path='metadata.yaml',
-                                       expression=f'type: {semantic_type}')
+    def assert_output_type(self, semantic_type, key=None):
+        expression = f'type: {re.escape(str(semantic_type))}'
+        path = 'metadata.yaml'
 
-    def assert_has_line_matching(self, path, expression):
-        self._galaxy_has_line_matching(path=f'data\\/{path}',
-                                       expression=expression)
+        if self.var_type in self.COLLECTION_VAR_TYPES:
+            self._assert_element_has_line_matching(path, expression, key)
+            return
+
+        self._galaxy_has_line_matching(path=path, expression=expression)
+
+    def assert_has_line_matching(self, path, expression, key=None):
+        path = f'data\\/{path}'
+
+        if self.var_type in self.COLLECTION_VAR_TYPES:
+            self._assert_element_has_line_matching(path, expression, key)
+            return
+
+        self._galaxy_has_line_matching(path=path, expression=expression)
+
+    def _assert_element_has_line_matching(self, path, expression, key):
+        # We cannot test the type of the output collection as a whole in galaxy
+        # in the same way as we can in other interfaces. There is nothing
+        # indicating that this collection is supposed to be specifically a
+        # Collection[EchoOutput] for instance
+        if key is None:
+            return
+
+        key = str(key)
+        output = self.use.output_lookup[self.name]
+        keys = self.use.keys_lookup[self.name]
+
+        if key not in keys:
+            element = XMLNode('element', name=key, ftype="qza")
+            output.append(element)
+            contents = XMLNode('assert_contents')
+            element.append(contents)
+            self.use.keys_lookup[self.name][key] = contents
+        else:
+            contents = self.use.keys_lookup[self.name][key]
+
+        path = (r'[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]'
+                r'{3}-[0-9a-f]{12}\/') + path
+        archive = contents.find(f'has_archive_member[@path="{path}"]')
+        if archive is None:
+            archive = XMLNode('has_archive_member', path=path)
+            contents.append(archive)
+
+        archive.append(XMLNode('has_line_matching', expression=expression))
 
     def _galaxy_has_line_matching(self, path, expression):
         output = self.use.output_lookup[self.name]
@@ -135,12 +178,17 @@ class GalaxyTestUsageVariable(GalaxyBaseUsageVariable):
 class GalaxyTestUsage(GalaxyBaseUsage):
     _USE_TSV_INDEX = True
 
-    def __init__(self, example_path, write_dir=None):
+    def __init__(self, example_path, write_dir=None, data_dir=None):
         super().__init__()
         self.prefix = f'{example_path[0].id}.test{example_path[1]}'
         self.xml = XMLNode('test')
         self.output_lookup = {}
+        self.keys_lookup = {}
         self.write_dir = write_dir
+        if data_dir is None:
+            self.data_dir = self.write_dir
+        else:
+            self.data_dir = data_dir
         self.created_files = []
 
     def usage_variable(self, name, factory, var_type):
@@ -149,6 +197,15 @@ class GalaxyTestUsage(GalaxyBaseUsage):
 
     def init_artifact(self, name, factory):
         var = super().init_artifact(name, factory)
+
+        if self.write_dir is not None:
+            status = var.write_file(self.write_dir)
+            self.created_files.append(status)
+
+        return var
+
+    def init_result_collection(self, name, factory):
+        var = super().init_result_collection(name, factory)
 
         if self.write_dir is not None:
             status = var.write_file(self.write_dir)
@@ -170,7 +227,7 @@ class GalaxyTestUsage(GalaxyBaseUsage):
 
         sig = action.get_action().signature
         mapped = inputs.map_variables(lambda v: v.to_interface_name())
-        for case in signature_to_galaxy(sig, mapped):
+        for case in signature_to_galaxy(sig, mapped, data_dir=self.data_dir):
             test_xml = case.tests_xml()
             if test_xml is None:
                 continue
@@ -179,9 +236,19 @@ class GalaxyTestUsage(GalaxyBaseUsage):
             for xml in test_xml:
                 self.xml.append(xml)
 
-        for output_name, output in outputs.items():
-            xml_out = XMLNode('output', name=output_name, ftype='qza')
-            self.output_lookup[output] = xml_out
+        for output_name, output in sig.outputs.items():
+            if is_collection_type(output.qiime_type):
+                xml_out = XMLNode('output_collection',
+                                  name=output_name,
+                                  type='list')
+            else:
+                xml_out = XMLNode('output', name=output_name, ftype='qza')
+
+            self.output_lookup[output_name] = xml_out
+
+            if output.qiime_type.name == 'Collection':
+                self.keys_lookup[output_name] = {}
+
             self.xml.append(xml_out)
 
         return vars_
