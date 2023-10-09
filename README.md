@@ -1,6 +1,6 @@
 # q2galaxy
 
-[![](https://github.com/qiime2/q2galaxy/workflows/ci-dev/badge.svg)](https://github.com/qiime2/q2galaxy/actions/workflows/ci-dev.yml)
+![](https://github.com/qiime2/q2galaxy/workflows/ci-dev/badge.svg)
 
 An interface for generating Galaxy tool descriptions automatically from
 QIIME 2 actions.
