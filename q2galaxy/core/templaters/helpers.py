@@ -26,7 +26,10 @@ def signature_to_galaxy(signature, arguments=None, data_dir=None):
             continue
         else:
             arg = arguments[name]
-        yield identify_arg_case(name, spec, arg, data_dir=data_dir)
+
+        arg = identify_arg_case(name, spec, arg, data_dir=data_dir)
+        if arg is not None:
+            yield arg
 
 
 def is_union_anywhere(qiime_type):
@@ -53,6 +56,9 @@ def identify_arg_case(name, spec, arg, data_dir=None):
             return BoolCase(name, spec, arg)
         elif spec.qiime_type.name == 'Str':
             return StrCase(name, spec, arg)
+        elif spec.qiime_type.name in ('Jobs', 'Threads'):
+            # we don't want these to be forwarded to galaxy
+            return None
         else:
             return NumericCase(name, spec, arg)
 
