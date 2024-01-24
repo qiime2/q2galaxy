@@ -104,7 +104,8 @@ def make_builtin_import(meta, tool_id):
     tool.append(inputs)
     tool.append(outputs)
     tool.append(
-        XMLNode('command', "q2galaxy run tools import '$inputs'"))
+        XMLNode('command', "q2galaxy run tools import '$inputs'",
+                detect_errors="exit_code"))
     tool.append(_make_config())
     tool.append(XMLNode('description', 'Import data into a QIIME 2 artifact'))
     tool.append(make_citations())
@@ -115,8 +116,8 @@ def make_builtin_import(meta, tool_id):
 
 def _make_config():
     configfiles = XMLNode("configfiles")
-    configfiles.append(XMLNode("configfile", _make_cheetah_config(),
-                               name="inputs"))
+    configfiles.append(XMLNode("inputs", name="inputs",
+                               data_style="staging_path_and_source_path"))
     return configfiles
 
 
@@ -249,58 +250,6 @@ def _get_default_formats(pm):
             default_formats[semantic_type] = fmt
 
     return default_formats
-
-
-# ! IMPORTANT !
-# This function is never called, but its source code is stolen for a
-# PSP body to be templated by Cheetah. This is written here to permit basic
-# syntax highlighting and linting (hence the `self` and `write` arguments for
-# the PSP). Everything inside `_inline_code` will be embedded.
-def _inline_code(self, write):
-    # This is an exercise in cheating the Cheetah
-    import json
-
-    def expand_collection(collection):
-        # All of this work is just to extract the
-        # element identifier AND the path
-        return [dict(name=d.element_identifier, data=stringify(d))
-                for d in collection]
-
-    def stringify(obj):
-        if type(obj) is dict:
-            new = {}
-            for key, value in obj.items():
-                if (key.startswith('__') and key.endswith('__')
-                        and not key.startswith('__q2galaxy__')):
-                    continue
-                new[str(key)] = stringify(value)
-
-            return new
-        elif type(obj) is list:
-            return [stringify(x) for x in obj]
-        elif type(obj.__str__) is not type(object().__str__):  # noqa
-            # There is an associated __str__ which will be used for
-            # "normal" templating, it looks like a strange check because
-            # it really is, we're testing for method-wrapper as a sign
-            # of non-implementation
-            return str(obj)
-        elif obj.is_collection:
-            return expand_collection(obj)
-        else:
-            raise NotImplementedError("Unrecognized situation in q2galaxy")
-
-    dataset = self.getVar('import_root')
-    inputs = stringify(dataset)
-    write(json.dumps(inputs))
-
-
-def _make_cheetah_config():
-    import inspect
-    template_psp_lines = inspect.getsource(_inline_code).split('\n')[1:-1]
-    template_body = dedent('\n'.join(template_psp_lines))
-    return f'''<%
-{template_body}
-    %>'''
 
 
 _instructions = """
