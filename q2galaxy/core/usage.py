@@ -204,8 +204,8 @@ class GalaxyTestUsage(GalaxyBaseUsage):
 
         return var
 
-    def init_result_collection(self, name, factory):
-        var = super().init_result_collection(name, factory)
+    def init_artifact_collection(self, name, factory):
+        var = super().init_artifact_collection(name, factory)
 
         if self.write_dir is not None:
             status = var.write_file(self.write_dir)
