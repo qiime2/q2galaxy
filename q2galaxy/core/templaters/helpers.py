@@ -344,7 +344,10 @@ class InputCase(ParamCase):
             return
 
         if self.multiple:
-            if self.spec.qiime_type.name == 'Collection':
+            # We may have received a list as input not a path to a collection.
+            # If we received a path to a collection it will be type str
+            if self.spec.qiime_type.name == 'Collection' and \
+                    isinstance(self.arg, str):
                 collection = ResultCollection.load(
                     os.path.join(self.data_dir, self.arg))
                 arg = []

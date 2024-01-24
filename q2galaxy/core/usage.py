@@ -236,18 +236,19 @@ class GalaxyTestUsage(GalaxyBaseUsage):
             for xml in test_xml:
                 self.xml.append(xml)
 
-        for output_name, output in sig.outputs.items():
-            if is_collection_type(output.qiime_type):
+
+        for (output_name, output), sig_output in zip(outputs.items(), sig.outputs.values()):
+            if is_collection_type(sig_output.qiime_type):
                 xml_out = XMLNode('output_collection',
                                   name=output_name,
                                   type='list')
             else:
                 xml_out = XMLNode('output', name=output_name, ftype='qza')
 
-            self.output_lookup[output_name] = xml_out
+            self.output_lookup[output] = xml_out
 
-            if output.qiime_type.name == 'Collection':
-                self.keys_lookup[output_name] = {}
+            if sig_output.qiime_type.name == 'Collection':
+                self.keys_lookup[output] = {}
 
             self.xml.append(xml_out)
 
