@@ -68,7 +68,7 @@ def _import_get_args(inputs):
                 files_to_move.extend([
                     (v['source_path'],
                      v['staging_path'].split('.fastqsanger.gz')[0] + ext)
-                     for v in value['elements']])
+                    for v in value['elements']])
             else:
                 files_to_move.append(
                     (value['source_path'], value['staging_path']))

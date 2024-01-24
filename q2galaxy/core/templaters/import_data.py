@@ -5,8 +5,6 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
-from textwrap import dedent
-
 import qiime2.plugin.model as model
 import qiime2.sdk as sdk
 from qiime2.sdk.plugin_manager import GetFormatFilters

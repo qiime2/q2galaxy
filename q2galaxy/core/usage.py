@@ -236,8 +236,8 @@ class GalaxyTestUsage(GalaxyBaseUsage):
             for xml in test_xml:
                 self.xml.append(xml)
 
-
-        for (output_name, output), sig_output in zip(outputs.items(), sig.outputs.values()):
+        for (output_name, output), sig_output in zip(outputs.items(),
+                                                     sig.outputs.values()):
             if is_collection_type(sig_output.qiime_type):
                 xml_out = XMLNode('output_collection',
                                   name=output_name,
