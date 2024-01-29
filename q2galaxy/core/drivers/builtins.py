@@ -14,6 +14,11 @@ import qiime2
 import qiime2.sdk
 import qiime2.util
 
+from q2_types.per_sample_sequences import (
+    CasavaOneEightSingleLanePerSampleDirFmt, SequencesWithQuality,
+    PairedEndSequencesWithQuality)
+from q2_types.sample_data import SampleData
+
 from q2galaxy.core.drivers.stdio import error_handler, stdio_files
 
 
@@ -28,6 +33,7 @@ def builtin_runner(action_id, inputs):
 def _get_tool(action_id):
     builtin_map = {
         'import': import_data,
+        'import-fastq': import_fastq_data,
         'export': export_data,
         'qza_to_tabular': qza_to_tabular
     }
@@ -44,6 +50,56 @@ def import_data(inputs, stdio):
                                  _stdio=stdio)
     _import_save(artifact,
                  _stdio=stdio)
+
+
+def import_fastq_data(inputs, stdio):
+    import os
+
+    type_ = SampleData[PairedEndSequencesWithQuality] if _is_paired(
+        inputs['import'][0]['staging_path']) else SampleData[SequencesWithQuality]
+    format_ = CasavaOneEightSingleLanePerSampleDirFmt
+
+    # Is it safe to assume that the paths with always be ordered as such:
+    #
+    # SAMPLE-ID1: forward
+    # SAMPLE-ID1: reverse
+    #
+    # SAMPLE-ID2: forward
+    # SAMPLE-ID2: reverse
+    #
+    # because if so the following should work
+    idx = 0
+    files_to_move = []
+    for input_ in inputs['import']:
+        if type_ == SampleData[PairedEndSequencesWithQuality]:
+            if 'forward' in os.path.basename(input_['staging_path']):
+                files_to_move.append((input_['source_path'], _to_casava(input_['staging_path'], idx, paired=True)))
+            else:
+                files_to_move.append((input_['source_path'], _to_casava(input_['staging_path'], idx, paired=True, dir='R2')))
+                idx += 1
+        else:
+            files_to_move.append((input_['source_path'], _to_casava(input_['staging_path'], idx)))
+            idx += 1
+
+    artifact = _import_name_data(type_, format_, files_to_move, _stdio=stdio)
+    _import_save(artifact, _stdio=stdio)
+
+
+def _is_paired(path):
+    import os
+
+    return 'forward' in os.path.basename(path)
+
+
+def _to_casava(path, idx, paired=False, dir="R1"):
+    import os
+
+    if paired:
+        sample_id = os.path.split(path)[0]
+    else:
+        sample_id = path.split('.fastq.gz')[0]
+
+    return f"{sample_id}_{idx}_L001_{dir}_001.fastq.gz"
 
 
 @error_handler(header='Unexpected error collecting arguments: ')
