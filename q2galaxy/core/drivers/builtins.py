@@ -53,10 +53,9 @@ def import_data(inputs, stdio):
 
 
 def import_fastq_data(inputs, stdio):
-    import os
+    paired = _is_paired(inputs['import'][0]['staging_path'])
 
-    type_ = SampleData[PairedEndSequencesWithQuality] if _is_paired(
-        inputs['import'][0]['staging_path']) else SampleData[SequencesWithQuality]
+    type_ = SampleData[PairedEndSequencesWithQuality] if paired else SampleData[SequencesWithQuality]
     format_ = CasavaOneEightSingleLanePerSampleDirFmt
 
     # Is it safe to assume that the paths with always be ordered as such:
@@ -71,14 +70,14 @@ def import_fastq_data(inputs, stdio):
     idx = 0
     files_to_move = []
     for input_ in inputs['import']:
-        if type_ == SampleData[PairedEndSequencesWithQuality]:
+        if paired:
             if 'forward' in os.path.basename(input_['staging_path']):
-                files_to_move.append((input_['source_path'], _to_casava(input_['staging_path'], idx, paired=True)))
+                files_to_move.append((input_['source_path'], _to_casava(input_['staging_path'], idx, paired, 'R1')))
             else:
-                files_to_move.append((input_['source_path'], _to_casava(input_['staging_path'], idx, paired=True, dir='R2')))
+                files_to_move.append((input_['source_path'], _to_casava(input_['staging_path'], idx, paired, 'R2')))
                 idx += 1
         else:
-            files_to_move.append((input_['source_path'], _to_casava(input_['staging_path'], idx)))
+            files_to_move.append((input_['source_path'], _to_casava(input_['staging_path'], idx, paired, 'R1')))
             idx += 1
 
     artifact = _import_name_data(type_, format_, files_to_move, _stdio=stdio)
@@ -86,14 +85,11 @@ def import_fastq_data(inputs, stdio):
 
 
 def _is_paired(path):
-    import os
-
+    # I'm not super convinced this is reliable
     return 'forward' in os.path.basename(path)
 
 
-def _to_casava(path, idx, paired=False, dir="R1"):
-    import os
-
+def _to_casava(path, idx, paired, dir):
     if paired:
         sample_id = os.path.split(path)[0]
     else:
