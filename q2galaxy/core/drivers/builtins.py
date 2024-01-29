@@ -90,6 +90,8 @@ def _is_paired(path):
 
 
 def _to_casava(path, idx, paired, dir):
+    # This only works if for paired they rename the pair to only the sample-id
+    # and for single their filename is only the sample-id
     if paired:
         sample_id = os.path.split(path)[0]
     else:
