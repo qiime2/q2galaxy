@@ -52,6 +52,7 @@ def import_data(inputs, stdio):
                  _stdio=stdio)
 
 
+@error_handler(header='Unexpected error importing fastq data: ')
 def import_fastq_data(inputs, stdio):
     paired = _is_paired(inputs['import'][0]['staging_path'])
 
@@ -91,11 +92,13 @@ def import_fastq_data(inputs, stdio):
     _import_save(artifact, _stdio=stdio)
 
 
+@error_handler(header='Unexpected error determining if data is paired: ')
 def _is_paired(path):
     # I'm not super convinced this is reliable
     return 'forward' in os.path.basename(path)
 
 
+@error_handler(header='Unexpected error converting filepath to casava: ')
 def _to_casava(path, idx, paired, dir):
     # This only works if for paired they rename the pair to only the sample-id
     # and for single their filename is only the sample-id
