@@ -54,12 +54,13 @@ def import_data(inputs, stdio):
 
 @error_handler(header='Unexpected error importing fastq data: ')
 def import_fastq_data(inputs, stdio):
-    paired = _is_paired(inputs)
+    paired = _is_paired(inputs, _stdio=stdio)
 
     type_ = SampleData[PairedEndSequencesWithQuality] if paired \
         else SampleData[SequencesWithQuality]
     format_ = CasavaOneEightSingleLanePerSampleDirFmt
-    files_to_move = _import_fastq_get_files_to_move(inputs, paired)
+    files_to_move = _import_fastq_get_files_to_move(
+        inputs, paired, _stdio=stdio)
 
     artifact = _import_name_data(type_, format_, files_to_move, _stdio=stdio)
     _import_save(artifact, _stdio=stdio)
