@@ -85,20 +85,20 @@ def _import_fastq_get_files_to_move(inputs, paired):
     idx = 0
     files_to_move = []
     for input_ in inputs['import']:
+        staging_path = input_['staging_path']
+        source_path = input_['source_path']
+
         if paired:
-            if 'forward' in os.path.basename(input_['staging_path']):
-                files_to_move.append((input_['source_path'],
-                                      _to_casava(input_['staging_path'],
-                                                 idx, paired, 'R1')))
+            if 'forward' in os.path.basename(staging_path):
+                files_to_move.append(
+                    (source_path, _to_casava(staging_path, idx, paired, 'R1')))
             else:
-                files_to_move.append((input_['source_path'],
-                                      _to_casava(input_['staging_path'],
-                                                 idx, paired, 'R2')))
+                files_to_move.append(
+                    (source_path, _to_casava(staging_path, idx, paired, 'R2')))
                 idx += 1
         else:
-            files_to_move.append((input_['source_path'],
-                                  _to_casava(input_['staging_path'],
-                                             idx, paired, 'R1')))
+            files_to_move.append(
+                (source_path, _to_casava(staging_path, idx, paired, 'R1')))
             idx += 1
 
     return files_to_move
