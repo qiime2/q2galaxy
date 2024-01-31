@@ -8,7 +8,7 @@
 import os
 import itertools
 from qiime2.sdk.util import (interrogate_collection_type, is_semantic_type,
-                             is_union, is_metadata_type,
+                             is_union, is_metadata_type, is_parallel_type,
                              is_metadata_column_type)
 from qiime2.plugin import Choices
 from qiime2.core.type.signature import ParameterSpec
@@ -43,6 +43,8 @@ def identify_arg_case(name, spec, arg, data_dir=None):
     if is_semantic_type(spec.qiime_type):
         return InputCase(name, spec, arg, data_dir=data_dir,
                          multiple=style.style is not None)
+    elif is_parallel_type(spec.qiime_type):
+        return None
 
     if style.style is None:  # not a collection
         if is_union_anywhere(spec.qiime_type):
@@ -56,9 +58,6 @@ def identify_arg_case(name, spec, arg, data_dir=None):
             return BoolCase(name, spec, arg)
         elif spec.qiime_type.name == 'Str':
             return StrCase(name, spec, arg)
-        elif spec.qiime_type.name in ('Jobs', 'Threads'):
-            # we don't want these to be forwarded to galaxy
-            return None
         else:
             return NumericCase(name, spec, arg)
 
