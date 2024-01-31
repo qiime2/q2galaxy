@@ -73,33 +73,20 @@ def _is_paired(inputs):
 
 @error_handler(header='Unexpected error getting files to move: ')
 def _import_fastq_get_files_to_move(inputs, paired):
-    # Is it safe to assume that the paths with always be ordered as such:
-    #
-    # SAMPLE-ID1: forward
-    # SAMPLE-ID1: reverse
-    #
-    # SAMPLE-ID2: forward
-    # SAMPLE-ID2: reverse
-    #
-    # because if so the following should work
     idx = 0
     files_to_move = []
     for input_ in inputs['import']:
         staging_path = input_['staging_path']
         source_path = input_['source_path']
 
-        if paired:
-            if 'forward' in os.path.basename(staging_path):
-                files_to_move.append(
-                    (source_path, _to_casava(staging_path, idx, paired, 'R1')))
-            else:
-                files_to_move.append(
-                    (source_path, _to_casava(staging_path, idx, paired, 'R2')))
-                idx += 1
+        if paired and 'reverse' in os.path.basename(staging_path):
+            files_to_move.append(
+                (source_path, _to_casava(staging_path, idx, paired, 'R2')))
         else:
             files_to_move.append(
                 (source_path, _to_casava(staging_path, idx, paired, 'R1')))
-            idx += 1
+
+        idx += 1
 
     return files_to_move
 
