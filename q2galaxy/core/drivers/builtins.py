@@ -54,12 +54,25 @@ def import_data(inputs, stdio):
 
 @error_handler(header='Unexpected error importing fastq data: ')
 def import_fastq_data(inputs, stdio):
-    paired = _is_paired(inputs['import'][0]['staging_path'])
+    paired = _is_paired(inputs)
 
     type_ = SampleData[PairedEndSequencesWithQuality] if paired \
         else SampleData[SequencesWithQuality]
     format_ = CasavaOneEightSingleLanePerSampleDirFmt
+    files_to_move = _import_fastq_get_files_to_move(inputs, paired)
 
+    artifact = _import_name_data(type_, format_, files_to_move, _stdio=stdio)
+    _import_save(artifact, _stdio=stdio)
+
+
+@error_handler(header='Unexpected error determining if data is paired: ')
+def _is_paired(inputs):
+    # I'm not super convinced this is reliable
+    return 'forward' in os.path.basename(inputs['import'][0]['staging_path'])
+
+
+@error_handler(header='Unexpected error getting files to move: ')
+def _import_fastq_get_files_to_move(inputs, paired):
     # Is it safe to assume that the paths with always be ordered as such:
     #
     # SAMPLE-ID1: forward
@@ -88,14 +101,7 @@ def import_fastq_data(inputs, stdio):
                                              idx, paired, 'R1')))
             idx += 1
 
-    artifact = _import_name_data(type_, format_, files_to_move, _stdio=stdio)
-    _import_save(artifact, _stdio=stdio)
-
-
-@error_handler(header='Unexpected error determining if data is paired: ')
-def _is_paired(path):
-    # I'm not super convinced this is reliable
-    return 'forward' in os.path.basename(path)
+    return files_to_move
 
 
 @error_handler(header='Unexpected error converting filepath to casava: ')
