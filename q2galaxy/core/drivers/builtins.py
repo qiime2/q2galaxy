@@ -71,6 +71,7 @@ def _is_paired(inputs):
     return any(x in os.path.basename(inputs['import'][0]['staging_path'])
                for x in ('forward', 'reverse'))
 
+
 @error_handler(header='Unexpected error getting files to move: ')
 def _import_fastq_get_files_to_move(inputs, paired):
     idx = 0
