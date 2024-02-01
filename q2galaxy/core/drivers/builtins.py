@@ -52,7 +52,6 @@ def import_data(inputs, stdio):
                  _stdio=stdio)
 
 
-@error_handler(header='Unexpected error importing fastq data: ')
 def import_fastq_data(inputs, stdio):
     paired = _is_paired(inputs, _stdio=stdio)
 
@@ -92,7 +91,6 @@ def _import_fastq_get_files_to_move(inputs, paired):
     return files_to_move
 
 
-@error_handler(header='Unexpected error converting filepath to casava: ')
 def _to_casava(path, idx, paired, dir):
     # This only works if for paired they rename the pair to only the sample-id
     # and for single their filename is only the sample-id
