@@ -68,8 +68,8 @@ def import_fastq_data(inputs, stdio):
 @error_handler(header='Unexpected error determining if data is paired: ')
 def _is_paired(inputs):
     # I'm not super convinced this is reliable
-    return 'forward' in os.path.basename(inputs['import'][0]['staging_path'])
-
+    return any(x in os.path.basename(inputs['import'][0]['staging_path'])
+               for x in ('forward', 'reverse'))
 
 @error_handler(header='Unexpected error getting files to move: ')
 def _import_fastq_get_files_to_move(inputs, paired):
