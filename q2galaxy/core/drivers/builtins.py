@@ -92,6 +92,15 @@ def _import_fastq_get_files_to_move(inputs, paired):
     return files_to_move
 
 
+# NOTE: If single end data is uploaded with no extension ex:
+#
+# sampleid
+# vs
+# sampleid.fastq.gz
+#
+# Then the user must choose the correct type during upload (.fastq.gz). If they
+# leave it on auto then everything goes wrong because galaxy doesn't seem ti
+# know what type to choose, so we seemingly get None
 def _to_casava(path, idx, paired, dir):
     # This only works if for paired they rename the pair to only the sample-id
     # and for single their filename is only the sample-id
