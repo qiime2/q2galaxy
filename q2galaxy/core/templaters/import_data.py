@@ -259,6 +259,7 @@ def _get_default_formats(pm):
 def _inline_code(self, write):
     # This is an exercise in cheating the Cheetah
     import json
+    from collections.abc import MutableMapping
 
     def expand_collection(collection):
         # All of this work is just to extract the
@@ -267,7 +268,7 @@ def _inline_code(self, write):
                 for d in collection]
 
     def stringify(obj):
-        if type(obj) is dict:
+        if isinstance(obj, MutableMapping):
             new = {}
             for key, value in obj.items():
                 if (key.startswith('__') and key.endswith('__')
