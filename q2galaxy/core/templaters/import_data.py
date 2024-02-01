@@ -160,6 +160,7 @@ def _add_collection_ui(root, file_attr):
     when_collection = XMLNode("when", value='collection')
     when_collection.append(
         XMLNode('param', type='data_collection', name='elements',
+                collection_type='list',
                 help=_format_help_text(file_attr.format)
                 + ' Elements must match regex:'
                   f' {_regex_xml_escape(file_attr.pathspec)}'))
