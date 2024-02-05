@@ -38,7 +38,6 @@ def _get_tool(action_id):
 
 
 def import_data(inputs, stdio):
-    inputs = inputs['import_root']
     type_, format_, files_to_move = _import_get_args(inputs,
                                                      _stdio=stdio)
     artifact = _import_name_data(type_, format_, files_to_move,
@@ -60,18 +59,15 @@ def _import_get_args(inputs):
             raise ValueError(f"Unknown instruction in JSON: {key}")
         elif key == 'import':
             # leave name as is, it's a FileFormat not a Directory Attr
-            files_to_move.append((value['source_path'], value['source_path']))
+            files_to_move.append((value['data'], value['data']))
         else:
             _, attr_name = key.split("_")
             if 'elements' in value:
                 ext = value.get('ext', '')
                 files_to_move.extend([
-                    (v['source_path'],
-                     v['staging_path'].split('.fastqsanger.gz')[0] + ext)
-                    for v in value['elements']])
+                    (v['data'], v['name'] + ext) for v in value['elements']])
             else:
-                files_to_move.append(
-                    (value['source_path'], value['staging_path']))
+                files_to_move.append((value['data'], value['name']))
 
     return type_, format_, files_to_move
 
