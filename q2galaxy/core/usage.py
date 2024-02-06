@@ -243,7 +243,9 @@ class GalaxyTestUsage(GalaxyBaseUsage):
                                   name=output_name,
                                   type='list')
             else:
-                xml_out = XMLNode('output', name=output_name, ftype='qza')
+                ext = 'qzv' if str(sig_output.qiime_type) == 'Visualization' \
+                    else 'qza'
+                xml_out = XMLNode('output', name=output_name, ftype=ext)
 
             self.output_lookup[output] = xml_out
 
