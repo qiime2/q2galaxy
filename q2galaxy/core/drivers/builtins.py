@@ -108,7 +108,10 @@ def _to_casava(path, idx, paired, dir):
     if paired:
         sample_id = os.path.split(path)[0]
     else:
-        sample_id = path.split('.fastq.gz')[0]
+        # Splitting on just .fastq and taking the first thing ought to work for
+        # any extension we are likely to see provided they don't put .fastq in
+        # their sampleid, and I'm fine with not letting them do that
+        sample_id = path.split('.fastq')[0]
 
     return f"{sample_id}_{idx}_L001_{dir}_001.fastq.gz"
 
