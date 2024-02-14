@@ -22,19 +22,19 @@ tools: all
 builtins: all
 	q2galaxy template builtins ./rendered/tools/ --distro core --metapackage qiime2-core
 
-test:
+test: stew
 	planemo test --install_galaxy \
-	  --galaxy_branch release_23.1 \
+	  --galaxy_branch release_22.05 \
 	  --galaxy_source https://github.com/galaxyproject/galaxy.git \
 	  --no_conda_auto_install \
 	  --no_conda_auto_init \
 	  --test_output ./rendered/tests/tool_test_output.html \
 	  --test_output_json ./rendered/tests/tool_test_output.json \
-	  ./rendered/tools/suite_qiime2__deblur
+	  ./rendered/tests/suite_qiime2__mystery_stew/
 
-serve:
+serve: tools
 	planemo serve --install_galaxy \
-	  --galaxy_branch release_23.1 \
+	  --galaxy_branch release_22.05 \
 	  --galaxy_source https://github.com/galaxyproject/galaxy.git \
 	  --no_conda_auto_install \
 	  --no_conda_auto_init \
@@ -50,22 +50,4 @@ clean: distclean
 	rm -rf ./rendered/tests/suite_*; \
 	rm -rf ./rendered/tools/suite_*
 
-test_deblur:
-	planemo test --install_galaxy \
-	  --galaxy_branch release_23.1 \
-	  --galaxy_source https://github.com/galaxyproject/galaxy.git \
-	  --no_conda_auto_install \
-	  --no_conda_auto_init \
-	  --test_output ./rendered/tests/tool_test_output.html \
-	  --test_output_json ./rendered/tests/tool_test_output.json \
-	  ./rendered/tools/suite_qiime2__deblur/qiime2__deblur__denoise_16S.xml
-
-serve-existing:
-	planemo serve --galaxy_root /home/anthony/GALAXY_TEST \
-	  --no_conda_auto_install \
-	  --no_conda_auto_init \
-	  ./rendered/tools/
-
-
 distclean: ;
-
