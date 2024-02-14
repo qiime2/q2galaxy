@@ -144,7 +144,7 @@ def make_help(plugin, action, data_dir):
 def make_command(plugin, action):
     return XMLNode(
         'command', f"q2galaxy run {plugin.id} {action.id} '$inputs'",
-        detect_errors="aggressive")
+        detect_errors="exit_code")
 
 
 def make_version_command(plugin):
