@@ -7,13 +7,12 @@
 # ----------------------------------------------------------------------------
 from qiime2.sdk import PluginManager
 
-from q2galaxy.core.util import (XMLNode, galaxy_esc, pretty_fmt_name,
-                                galaxy_ui_var, rst_header)
+from q2galaxy.core.util import XMLNode
 from q2galaxy.core.templaters.common import (make_builtin_version,
                                              make_tool_name_from_id,
                                              make_requirements,
-                                             make_citations,
-                                             make_formats_help)
+                                             make_citations)
+
 
 def make_builtin_import_fastq(meta, tool_id):
     pm = PluginManager()
