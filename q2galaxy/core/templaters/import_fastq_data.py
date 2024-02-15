@@ -27,7 +27,7 @@ def make_builtin_import_fastq(meta, tool_id):
     tool.append(_make_input())
     tool.append(_make_output())
     tool.append(
-        XMLNode('command', "q2galaxy run tools import_fastq '$inputs'"))
+        XMLNode('command', "q2galaxy run tools import-fastq '$inputs'"))
     tool.append(XMLNode('description',
                         'Import fastq data into a QIIME 2 artifact'))
     tool.append(_make_config())
