@@ -36,7 +36,9 @@ class GalaxyBaseUsageVariable(UsageVariable):
             return self._q2galaxy_ref
 
         ext = ext_map[self.var_type]
-        if ext:
+        if ext == '/':
+            return self.name.replace('_', '-') + ext
+        elif ext:
             return '.'.join([self.name.replace('_', '-'), ext])
         return self.name
 
