@@ -16,7 +16,7 @@ import qiime2.util
 
 from q2galaxy.core.drivers.stdio import error_handler, stdio_files
 
-_IMPORT_FASTQ_ = True
+IMPORT_FASTQ = True
 
 try:
     from q2_types.per_sample_sequences import (
@@ -24,7 +24,7 @@ try:
         PairedEndSequencesWithQuality)
     from q2_types.sample_data import SampleData
 except Exception:
-    _IMPORT_FASTQ_ = False
+    IMPORT_FASTQ = False
 
 
 def builtin_runner(action_id, inputs):
@@ -39,11 +39,9 @@ def _get_tool(action_id):
     builtin_map = {
         'import': import_data,
         'export': export_data,
-        'qza_to_tabular': qza_to_tabular
+        'qza_to_tabular': qza_to_tabular,
+        'import-fastq': import_fastq_data
     }
-
-    if _IMPORT_FASTQ_:
-        builtin_map['import-fastq'] = import_fastq_data
 
     try:
         return builtin_map[action_id]
