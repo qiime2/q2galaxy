@@ -16,6 +16,13 @@ import qiime2.util
 
 from q2galaxy.core.drivers.stdio import error_handler, stdio_files
 
+# Verify that the types the tool relies on are present and use this information
+# in q2galaxy/core/templaters/__init__.py to determine whether or not to render
+# the tool.
+#
+# We do these imports here because they are needed for import_fastq_data, and
+# we set this variable because the presence/absence of these types is needed in
+# templaters init.
 IMPORT_FASTQ = True
 
 try:
