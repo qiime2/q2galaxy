@@ -14,6 +14,8 @@ import qiime2
 import qiime2.sdk
 import qiime2.util
 
+from q2galaxy.core.drivers.stdio import error_handler, stdio_files
+
 _IMPORT_FASTQ_ = True
 
 try:
@@ -23,8 +25,6 @@ try:
     from q2_types.sample_data import SampleData
 except Exception:
     _IMPORT_FASTQ_ = False
-
-from q2galaxy.core.drivers.stdio import error_handler, stdio_files
 
 
 def builtin_runner(action_id, inputs):
