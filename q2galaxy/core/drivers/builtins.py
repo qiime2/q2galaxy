@@ -14,10 +14,15 @@ import qiime2
 import qiime2.sdk
 import qiime2.util
 
-from q2_types.per_sample_sequences import (
-    CasavaOneEightSingleLanePerSampleDirFmt, SequencesWithQuality,
-    PairedEndSequencesWithQuality)
-from q2_types.sample_data import SampleData
+_IMPORT_FASTQ_ = True
+
+try:
+    from q2_types.per_sample_sequences import (
+        CasavaOneEightSingleLanePerSampleDirFmt, SequencesWithQuality,
+        PairedEndSequencesWithQuality)
+    from q2_types.sample_data import SampleData
+except Exception:
+    _IMPORT_FASTQ_ = False
 
 from q2galaxy.core.drivers.stdio import error_handler, stdio_files
 
@@ -33,10 +38,13 @@ def builtin_runner(action_id, inputs):
 def _get_tool(action_id):
     builtin_map = {
         'import': import_data,
-        'import-fastq': import_fastq_data,
         'export': export_data,
         'qza_to_tabular': qza_to_tabular
     }
+
+    if _IMPORT_FASTQ_:
+        builtin_map['import-fastq'] = import_fastq_data
+
     try:
         return builtin_map[action_id]
     except KeyError:
