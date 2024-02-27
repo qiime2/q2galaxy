@@ -16,6 +16,23 @@ import qiime2.util
 
 from q2galaxy.core.drivers.stdio import error_handler, stdio_files
 
+# Verify that the types the tool relies on are present and use this information
+# in q2galaxy/core/templaters/__init__.py to determine whether or not to render
+# the tool.
+#
+# We do these imports here because they are needed for import_fastq_data, and
+# we set this variable because the presence/absence of these types is needed in
+# templaters init.
+IMPORT_FASTQ = True
+
+try:
+    from q2_types.per_sample_sequences import (
+        CasavaOneEightSingleLanePerSampleDirFmt, SequencesWithQuality,
+        PairedEndSequencesWithQuality)
+    from q2_types.sample_data import SampleData
+except Exception:
+    IMPORT_FASTQ = False
+
 
 def builtin_runner(action_id, inputs):
     with stdio_files() as stdio:
@@ -29,8 +46,10 @@ def _get_tool(action_id):
     builtin_map = {
         'import': import_data,
         'export': export_data,
-        'qza_to_tabular': qza_to_tabular
+        'qza_to_tabular': qza_to_tabular,
+        'import-fastq': import_fastq_data
     }
+
     try:
         return builtin_map[action_id]
     except KeyError:
@@ -44,6 +63,70 @@ def import_data(inputs, stdio):
                                  _stdio=stdio)
     _import_save(artifact,
                  _stdio=stdio)
+
+
+def import_fastq_data(inputs, stdio):
+    paired = _is_paired(inputs, _stdio=stdio)
+
+    type_ = SampleData[PairedEndSequencesWithQuality] if paired \
+        else SampleData[SequencesWithQuality]
+    format_ = CasavaOneEightSingleLanePerSampleDirFmt
+    files_to_move = _import_fastq_get_files_to_move(
+        inputs, paired, _stdio=stdio)
+
+    artifact = _import_name_data(type_, format_, files_to_move, _stdio=stdio)
+    _import_save(artifact, _stdio=stdio)
+
+
+@error_handler(header='Unexpected error determining if data is paired: ')
+def _is_paired(inputs):
+    # I'm not super convinced this is reliable
+    return any(x in os.path.basename(inputs['import'][0]['staging_path'])
+               for x in ('forward', 'reverse'))
+
+
+@error_handler(header='Unexpected error getting files to move: ')
+def _import_fastq_get_files_to_move(inputs, paired):
+    idx = 0
+    files_to_move = []
+    for input_ in inputs['import']:
+        staging_path = input_['staging_path']
+        source_path = input_['source_path']
+
+        if paired and 'reverse' in os.path.basename(staging_path):
+            files_to_move.append(
+                (source_path, _to_casava(staging_path, idx, paired, 'R2')))
+        else:
+            files_to_move.append(
+                (source_path, _to_casava(staging_path, idx, paired, 'R1')))
+
+        idx += 1
+
+    return files_to_move
+
+
+# NOTE: If single end data is uploaded with no extension ex:
+#
+# sampleid
+# vs
+# sampleid.fastq.gz
+#
+# Then the user must choose the correct type during upload (.fastq.gz). If they
+# leave it on auto then everything goes wrong because galaxy doesn't seem to
+# know what type to choose, so we seemingly get None. If they choose the wrong
+# one then. . . Well don't choose the wrong one
+def _to_casava(path, idx, paired, dir):
+    # This only works if for paired they rename the pair to only the sample-id
+    # and for single their filename is only the sample-id
+    if paired:
+        sample_id = os.path.split(path)[0]
+    else:
+        # Splitting on just .fastq and taking the first thing ought to work for
+        # any extension we are likely to see provided they don't put .fastq in
+        # their sampleid, and I'm fine with not letting them do that
+        sample_id = path.split('.fastq')[0]
+
+    return f"{sample_id}_{idx}_L001_{dir}_001.fastq.gz"
 
 
 @error_handler(header='Unexpected error collecting arguments: ')
