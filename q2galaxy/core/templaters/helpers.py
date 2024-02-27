@@ -13,6 +13,7 @@ from qiime2.sdk.util import (interrogate_collection_type, is_semantic_type,
 from qiime2.plugin import Choices
 from qiime2.core.type.signature import ParameterSpec
 from qiime2 import ResultCollection
+from qiime2.core.type.grammar import UnionExp, IntersectionExp
 
 from q2galaxy.core.util import XMLNode, galaxy_esc, galaxy_ui_var
 
@@ -336,20 +337,42 @@ class InputCase(ParamCase):
         return param
 
     def _make_validator(self):
-        _validator_set = repr(list(sorted(set(map(str, self.qiime_type)))))
+        validator_set = self._make_validator_set(self.qiime_type)
+        validator_set = repr(list(sorted(map(str, validator_set))))
+
         validator = XMLNode(
             'validator',
             'hasattr(value.metadata, "semantic_type")'
-            f' and value.metadata.semantic_type in {_validator_set}',
+            f' and value.metadata.semantic_type in {validator_set}',
             type='expression', message='Incompatible type')
         return validator
+
+    def _make_validator_set(self, qiime_type):
+        validator_set = set()
+
+        for field in qiime_type:
+            validator_set.update(field)
+
+            if isinstance(field, UnionExp):
+                field = field.unpack_union()
+            elif isinstance(field, IntersectionExp):
+                field = field.unpack_intersection()
+            else:
+                continue
+
+            validator_set.update(self._make_validator_set(field))
+
+        return validator_set
 
     def tests_xml(self):
         if self.arg is None:
             return
 
         if self.multiple:
-            if self.spec.qiime_type.name == 'Collection':
+            # We may have received a list as input not a path to a collection.
+            # If we received a path to a collection it will be type str
+            if self.spec.qiime_type.name == 'Collection' and \
+                    isinstance(self.arg, str):
                 collection = ResultCollection.load(
                     os.path.join(self.data_dir, self.arg))
                 arg = []

@@ -45,7 +45,10 @@ def make_tool(conda_meta, plugin, action, test_dir):
 
     outputs = XMLNode('outputs')
     for name, spec in signature.outputs.items():
-        output = make_output(name, spec)
+        if is_collection_type(spec.qiime_type):
+            output = make_output_collection(name)
+        else:
+            output = make_output(name, spec)
         outputs.append(output)
 
     # Drop local identifier if it exists, it will be in a different local
@@ -95,20 +98,21 @@ def make_filename(name, spec):
 
 
 def make_output(name, spec):
-    if is_collection_type(spec.qiime_type):
-        collection_node = XMLNode('collection', name=name, type='list')
-        discover_node = XMLNode('discover_datasets',
-                                pattern="__name_and_ext__",
-                                directory=name)
-        collection_node.append(discover_node)
-        return collection_node
-
     file_name, ext = make_filename(name, spec)
     XML_attrs = {}
     if ext == 'qza' or ext == 'qzv':
         XML_attrs['label'] = '${tool.id} on ${on_string}: ' + file_name
     return XMLNode('data', format=ext, name=name, from_work_dir=file_name,
                    **XML_attrs)
+
+
+def make_output_collection(name):
+    collection_node = XMLNode('collection', name=name, type='list')
+    discover_node = XMLNode('discover_datasets',
+                            pattern="__name_and_ext__",
+                            directory=name)
+    collection_node.append(discover_node)
+    return collection_node
 
 
 def make_help(plugin, action, data_dir):
@@ -144,7 +148,7 @@ def make_help(plugin, action, data_dir):
 def make_command(plugin, action):
     return XMLNode(
         'command', f"q2galaxy run {plugin.id} {action.id} '$inputs'",
-        detect_errors="aggressive")
+        detect_errors="exit_code")
 
 
 def make_version_command(plugin):
