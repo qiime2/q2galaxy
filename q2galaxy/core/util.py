@@ -65,7 +65,7 @@ def XMLNode(name_, _text=None, **attrs):
 
 def write_tool(tool, filepath):
     tool = OrderedTool.sorted(tool)
-    tool.set('profile', '20.09')
+    tool.set('profile', '22.05')
     tool.set('license', 'BSD-3-Clause')
     tool.addprevious(xml.Comment(COPYRIGHT))
     tool.addprevious(xml.Comment(

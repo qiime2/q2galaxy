@@ -36,7 +36,9 @@ class GalaxyBaseUsageVariable(UsageVariable):
             return self._q2galaxy_ref
 
         ext = ext_map[self.var_type]
-        if ext:
+        if ext == '/':
+            return self.name.replace('_', '-') + ext
+        elif ext:
             return '.'.join([self.name.replace('_', '-'), ext])
         return self.name
 
@@ -204,8 +206,8 @@ class GalaxyTestUsage(GalaxyBaseUsage):
 
         return var
 
-    def init_result_collection(self, name, factory):
-        var = super().init_result_collection(name, factory)
+    def init_artifact_collection(self, name, factory):
+        var = super().init_artifact_collection(name, factory)
 
         if self.write_dir is not None:
             status = var.write_file(self.write_dir)
@@ -236,18 +238,21 @@ class GalaxyTestUsage(GalaxyBaseUsage):
             for xml in test_xml:
                 self.xml.append(xml)
 
-        for output_name, output in sig.outputs.items():
-            if is_collection_type(output.qiime_type):
+        for (output_name, output), sig_output in zip(outputs.items(),
+                                                     sig.outputs.values()):
+            if is_collection_type(sig_output.qiime_type):
                 xml_out = XMLNode('output_collection',
                                   name=output_name,
                                   type='list')
             else:
-                xml_out = XMLNode('output', name=output_name, ftype='qza')
+                ext = 'qzv' if str(sig_output.qiime_type) == 'Visualization' \
+                    else 'qza'
+                xml_out = XMLNode('output', name=output_name, ftype=ext)
 
-            self.output_lookup[output_name] = xml_out
+            self.output_lookup[output] = xml_out
 
-            if output.qiime_type.name == 'Collection':
-                self.keys_lookup[output_name] = {}
+            if sig_output.qiime_type.name == 'Collection':
+                self.keys_lookup[output] = {}
 
             self.xml.append(xml_out)
 
