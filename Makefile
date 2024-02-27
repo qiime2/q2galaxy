@@ -51,4 +51,3 @@ clean: distclean
 	rm -rf ./rendered/tools/suite_*
 
 distclean: ;
-
