@@ -12,7 +12,7 @@ from qiime2.sdk.plugin_manager import GetFormatFilters
 from q2galaxy.core.util import XMLNode, galaxy_esc, pretty_fmt_name, rst_header
 from q2galaxy.core.templaters.common import (
     make_builtin_version, make_requirements, make_tool_name_from_id,
-    make_config, make_citations, make_formats_help)
+    make_config, make_citations, make_formats_help, make_xrefs)
 
 
 def make_builtin_export(meta, tool_id):
@@ -170,6 +170,7 @@ def make_builtin_export(meta, tool_id):
     tool.append(make_citations())
     tool.append(make_requirements(meta, *[p.project_name for p in plugins]))
     tool.append(_make_help(known_formats))
+    tool.append(make_xrefs())
 
     return tool
 

@@ -115,3 +115,10 @@ def make_formats_help(formats):
             help_ += f' - {format_.__name__}\n'
 
     return help_
+
+
+def make_xrefs():
+    xefs = XMLNode('xefs')
+    xefs.append(
+        XMLNode('xref', 'qiime2', type='bio.tools'))
+    return xefs

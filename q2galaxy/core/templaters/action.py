@@ -14,7 +14,7 @@ from q2galaxy.core.usage import GalaxyTestUsage
 from q2galaxy.core.util import XMLNode, galaxy_ui_var, rst_header
 from q2galaxy.core.templaters.common import (
     make_tool_id, make_tool_name, make_config, make_citations,
-    make_requirements)
+    make_requirements, make_xrefs)
 from q2galaxy.core.templaters.helpers import signature_to_galaxy
 
 
@@ -76,6 +76,7 @@ def make_tool(conda_meta, plugin, action, test_dir):
     tool.append(make_help(plugin, action, test_dir))
     tool.append(make_citations(plugin, action))
     tool.append(make_requirements(conda_meta, plugin.project_name))
+    tool.append(make_xrefs())
     return tool
 
 
