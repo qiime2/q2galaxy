@@ -141,7 +141,7 @@ Usually you will start the server on `http://localhost:8080`, but this can be ch
 
 Example:
 ```
-docker run -d -p 8080:80 -p 8021:21 -p 8022:22 -v $HOME/q2galaxy_data/:/export/ quay.io/qiime2/q2galaxy
+docker run --platform linux/amd64 -d -p 8080:80 -p 8021:21 -p 8022:22 -v $HOME/q2galaxy_data/:/export/ quay.io/qiime2/q2galaxy
 ```
 
 ### Building the image yourself
