@@ -18,10 +18,10 @@ import q2galaxy
 
 class OrderedTool(collections.OrderedDict):
     order = ["description", "macros", "edam_topics", "edam_operations",
-             "parallelism", "requirements", "code", "stdio", "version_command",
-             "command", "environment_variables", "configfiles", "inputs",
-             "request_param_translation", "outputs", "tests", "help",
-             "citations"]
+             "parallelism", "xrefs", "requirements", "code", "stdio",
+             "version_command", "command", "environment_variables",
+             "configfiles", "inputs", "request_param_translation",
+             "outputs", "tests", "help", "citations"]
     order_attr = ['name', 'argument', 'type', 'format', 'min', 'truevalue',
                   'max', 'falsevalue', 'value', 'checked', 'optional', 'label',
                   'help']

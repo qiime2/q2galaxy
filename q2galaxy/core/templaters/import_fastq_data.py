@@ -11,7 +11,8 @@ from q2galaxy.core.util import XMLNode
 from q2galaxy.core.templaters.common import (make_builtin_version,
                                              make_tool_name_from_id,
                                              make_requirements,
-                                             make_citations)
+                                             make_citations,
+                                             make_xrefs)
 
 
 def make_builtin_import_fastq(meta, tool_id):
@@ -33,6 +34,7 @@ def make_builtin_import_fastq(meta, tool_id):
     tool.append(_make_config())
     tool.append(make_citations())
     tool.append(make_requirements(meta, *[p.project_name for p in plugins]))
+    tool.append(make_xrefs())
     return tool
 
 
