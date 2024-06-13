@@ -118,7 +118,7 @@ def make_formats_help(formats):
 
 
 def make_xrefs():
-    xefs = XMLNode('xefs')
-    xefs.append(
+    xrefs = XMLNode('xrefs')
+    xrefs.append(
         XMLNode('xref', 'qiime2', type='bio.tools'))
-    return xefs
+    return xrefs
