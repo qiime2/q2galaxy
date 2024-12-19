@@ -1,0 +1,32 @@
+package:
+  name: q2galaxy
+  version: {{ PLUGIN_VERSION }}
+source:
+  path: ..
+build:
+  script: make install
+  entry_points:
+  - q2galaxy=q2galaxy.__main__:root
+requirements:
+  host:
+  - python  {{ python }}
+  - setuptools
+  - versioningit
+  - wheel
+  run:
+  - python  {{ python }}
+  - qiime2 {{ qiime2_epoch }}.*
+  - click
+  - lxml
+  build:
+  - setuptools
+  - versioningit
+test:
+  requires:
+  - qiime2 >={{ qiime2 }}
+  imports:
+  - q2galaxy
+about:
+  home: https://qiime2.org
+  license: BSD-3-Clause
+  license_family: BSD

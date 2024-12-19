@@ -1,2 +1,0 @@
-include versioneer.py
-include q2galaxy/_version.py
