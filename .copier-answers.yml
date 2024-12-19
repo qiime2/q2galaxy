@@ -1,0 +1,12 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: dfb0404
+_src_path: https://github.com/qiime2/q2-setup-template.git
+module_name: q2galaxy
+plugin_name: q2galaxy
+plugin_scripts: null
+project_author_email: developers@qiime2.org
+project_author_name: null
+project_description: null
+project_name: q2galaxy
+project_urls_homepage: null
+project_urls_repository: https://github.com/qiime2/q2galaxy
