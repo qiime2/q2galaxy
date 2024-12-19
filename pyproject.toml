@@ -9,11 +9,11 @@ license = {file = "LICENSE"}
 dynamic = ["version"]
 
 [project.urls]
-Homepage = "None"
+Homepage = "https://github.com/qiime2/q2galaxy"
 Repository = "https://github.com/qiime2/q2galaxy"
 
-[project.entry-points.'qiime2.plugins']
-"q2galaxy" = "q2galaxy.plugin_setup:plugin"
+[project.scripts]
+"q2galaxy" = "q2galaxy.__main__:root"
 
 [build-system]
 requires = [
