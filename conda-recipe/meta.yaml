@@ -19,6 +19,7 @@ requirements:
   - click
   - lxml
   build:
+  - python {{ python }}
   - setuptools
   - versioningit
 test:
