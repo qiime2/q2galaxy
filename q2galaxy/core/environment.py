@@ -7,7 +7,7 @@
 # ----------------------------------------------------------------------------
 import os
 import json
-import pkg_resources
+import importlib.metadata
 
 
 class CondaMeta:
@@ -24,7 +24,7 @@ class CondaMeta:
                 self.meta_lookup[name] = os.path.join(self.meta, filename)
 
         self.backup = {d.project_name: d.version
-                       for d in pkg_resources.working_set}
+                       for d in importlib.metadata.distributions()}
 
     def __getitem__(self, package):
         if package not in self._cache:
