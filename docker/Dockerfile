@@ -14,23 +14,9 @@ COPY qiime2_tool_conf.xml /qiime2_tools/
 # Mark folders as imported from the host.
 VOLUME ["/export/", "/data/", "/var/lib/docker"]
 
-# Install base utilities
-RUN apt-get update \
-    && apt-get install -y build-essential \
-    && apt-get install -y wget \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install miniconda
-ENV CONDA_DIR /opt/conda
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
-    /bin/bash ~/miniconda.sh -b -p /opt/conda
-
-# Put conda in path so we can use conda activate
-ENV PATH=$CONDA_DIR/bin:$PATH
-
-# Create a QIIME 2 conda env
-RUN conda env create -n qiime2-amplicon-2024.10 --file https://data.qiime2.org/distro/amplicon/qiime2-amplicon-2024.10-py310-linux-conda.yml
+RUN /export/tool_deps/_conda/bin/conda create -y --quiet --solver libmamba --override-channels \
+    --channel https://packages.qiime2.org/qiime2/2024.10/amplicon/released --channel iuc --channel \
+    conda-forge --channel bioconda --channel defaults --name __qiime2-amplicon@2024.10.26.21.34.56 qiime2-amplicon=2024.10.26.21.34.56
 
 EXPOSE :80
 EXPOSE :21
