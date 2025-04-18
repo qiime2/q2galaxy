@@ -23,7 +23,7 @@ class CondaMeta:
                 name = filename.rsplit('-', 2)[0]
                 self.meta_lookup[name] = os.path.join(self.meta, filename)
 
-        self.backup = {d.project_name: d.version
+        self.backup = {d.metadata['Name']: d.metadata['Version']
                        for d in importlib.metadata.distributions()}
 
     def __getitem__(self, package):
