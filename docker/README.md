@@ -4,7 +4,7 @@ To start, run the `prepare.sh` script in this directory by passing it an environ
 
 ```
 cd q2galaxy/docker/
-./prepare.sh some_environment_file.yml
+./prepare.sh some_environment_file.yml <distro> <epoch>
 ```
 
 This will install an environment in the root of the project and use that to template out your tools.

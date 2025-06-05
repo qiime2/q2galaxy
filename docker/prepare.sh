@@ -2,16 +2,12 @@ set -ex
 
 cd $(dirname $(realpath -s $0))
 
-TAG=$(echo $1 | cut -d- -f1)
-METAPACKAGE=$(echo $1 | cut -d- -f1,2,3 )
-METAPACKAGE="${METAPACKAGE//-/@}"
-METAPACKAGE="${METAPACKAGE/@/-}"
-ENV_P=../__tmp_q2galaxy_env_$TAG
+ENV_P=../__tmp_q2galaxy_env_qiime2-$2@$3
 
 conda env create -p $ENV_P --file $1
 
 mkdir -p tools/
 rm -rf tools/*
-conda run -p $ENV_P q2galaxy template all tools/ --metapackage $METAPACKAGE
+conda run -p $ENV_P q2galaxy template all tools/ --metapackage __qiime2-$2@$3
 
-echo sudo docker build -t q2galaxy:$TAG .
+echo sudo docker build -t q2galaxy:$3 .
