@@ -17,10 +17,10 @@ stew: all
 	q2galaxy template tests ./rendered/tests/
 
 tools: all
-	q2galaxy template all ./rendered/tools/ --distro amplicon --metapackage qiime2-amplicon@2024.10
+	q2galaxy template all ./rendered/tools/ --distro amplicon --metapackage qiime2-amplicon@2025.4
 
 builtins: all
-	q2galaxy template builtins ./rendered/tools/ --distro amplicon --metapackage qiime2-amplicon@2024.10
+	q2galaxy template builtins ./rendered/tools/ --distro amplicon --metapackage qiime2-amplicon@2025.4
 
 test: stew
 	planemo test --install_galaxy \
