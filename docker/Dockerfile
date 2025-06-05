@@ -1,9 +1,13 @@
 FROM quay.io/bgruening/galaxy:24.2
 
+ARG DISTRO=amplicon
+ARG EPOCH
+ARG METAPACKAGE_VERSION
+
 ENV \
 GALAXY_CONFIG_TOOL_CONFIG_FILE=/qiime2_tools/qiime2_tool_conf.xml \
 GALAXY_CONFIG_CONDA_AUTO_INSTALL=true \
-GALAXY_CONFIG_CONDA_ENSURE_CHANNELS=https://packages.qiime2.org/qiime2/2025.4/amplicon/released,iuc,conda-forge,bioconda,defaults
+GALAXY_CONFIG_CONDA_ENSURE_CHANNELS=https://packages.qiime2.org/qiime2/${EPOCH}/${DISTRO}/released,iuc,conda-forge,bioconda,defaults
 
 # Install Visualisation
 RUN install-biojs msa
@@ -15,8 +19,8 @@ COPY qiime2_tool_conf.xml /qiime2_tools/
 VOLUME ["/export/", "/data/", "/var/lib/docker"]
 
 RUN /export/tool_deps/_conda/bin/conda create -y --quiet --solver libmamba --override-channels \
-    --channel https://packages.qiime2.org/qiime2/2025.4/amplicon/released --channel iuc --channel \
-    conda-forge --channel bioconda --channel defaults --name __qiime2-amplicon@2025.4 qiime2-amplicon=2025.05.02.02.10
+    --channel https://packages.qiime2.org/qiime2/${EPOCH}/${DISTRO}/released --channel iuc --channel \
+    conda-forge --channel bioconda --channel defaults --name __qiime2-${DISTRO}@${EPOCH} qiime2-${DISTRO}=${METAPACKAGE_VERSION}
 
 EXPOSE 80
 EXPOSE 21

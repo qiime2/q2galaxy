@@ -1,10 +1,10 @@
 # Building your own image
 
-To start, run the `prepare.sh` script in this directory by passing it an environment file you wish to template.
+To start, run the `prepare.sh` script in this directory by passing it an environment file you wish to template. The metapackage version comes from packages.qiime2.org.
 
 ```
 cd q2galaxy/docker/
-./prepare.sh some_environment_file.yml <distro> <epoch>
+./prepare.sh some_environment_file.yml <distro> <epoch> <metapackage-version>
 ```
 
 This will install an environment in the root of the project and use that to template out your tools.
