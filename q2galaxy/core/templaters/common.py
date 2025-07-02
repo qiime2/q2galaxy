@@ -74,10 +74,15 @@ def make_requirements(conda_meta, *project_names):
         requirements.append(
             XMLNode('requirement', 'q2galaxy',
                     type='package', version=q2galaxy.__version__))
-    for dep, version in conda_meta.iter_deps(*project_names,
-                                             include_self=True):
-        r = XMLNode('requirement', dep, type='package', version=version)
-        requirements.append(r)
+
+        for dep, version in conda_meta.iter_deps(*project_names,
+                                                 include_self=True):
+            r = XMLNode('requirement', dep, type='package', version=version)
+            requirements.append(r)
+    else:
+        requirements.append(
+            XMLNode('requirement', conda_meta.metapackage_name,
+                    type='package', version=conda_meta.metapackage_version))
 
     return requirements
 

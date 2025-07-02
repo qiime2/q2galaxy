@@ -15,6 +15,13 @@ class CondaMeta:
         self.prefix = prefix
         self.meta = os.path.join(self.prefix, 'conda-meta')
         self.metapackage = metapackage
+
+        if self.metapackage:
+            self.metapackage_name, self.metapackage_version = \
+                metapackage.split('@')
+        else:
+            self.metapackage_name = self.metapackage_version = None
+
         self._cache = {}
 
         self.meta_lookup = {}
@@ -43,10 +50,6 @@ class CondaMeta:
                     if not dep.startswith('__'))
 
     def iter_deps(self, *packages, include_self=True, _seen=None):
-        if self.metapackage is not None:
-            yield self.metapackage, self.get_version(self.metapackage)
-            return
-
         if _seen is None:
             _seen = set()
 
