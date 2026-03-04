@@ -42,8 +42,7 @@ def identify_arg_case(name, spec, arg, data_dir=None):
     style = interrogate_collection_type(spec.qiime_type)
 
     if is_semantic_type(spec.qiime_type):
-        return InputCase(name, spec, arg, data_dir=data_dir,
-                         multiple=style.style is not None)
+        return InputCase(name, spec, style, arg, data_dir=data_dir)
     elif is_parallel_type(spec.qiime_type):
         return None
 
@@ -302,13 +301,13 @@ class ColumnTabularCase(ParamCase):
 
 
 class InputCase(ParamCase):
-    def __init__(self, name, spec, arg=None, data_dir=None, multiple=False):
+    def __init__(self, name, spec, style, arg=None, data_dir=None):
         super().__init__(name, spec, arg)
         self.data_dir = data_dir
-        self.multiple = multiple
+        self.multiple = style.style is not None
 
         self.qiime_type = spec.qiime_type
-        if multiple:
+        if self.multiple:
             self.qiime_type = spec.qiime_type.fields[0]
 
     def get_rst_arg(self):
