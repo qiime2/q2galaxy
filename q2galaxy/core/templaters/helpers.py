@@ -308,7 +308,7 @@ class InputCase(ParamCase):
 
         self.qiime_type = spec.qiime_type
         if self.multiple:
-            self.qiime_type = spec.qiime_type.fields[0]
+            self.qiime_type = style.members
 
     def get_rst_arg(self):
         if self.arg is None:
