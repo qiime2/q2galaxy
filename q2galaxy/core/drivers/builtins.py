@@ -7,6 +7,8 @@
 # ----------------------------------------------------------------------------
 import os
 import sys
+import gzip
+import shutil
 import tempfile
 import distutils
 
@@ -67,6 +69,7 @@ def import_data(inputs, stdio):
 
 def import_fastq_data(inputs, stdio):
     paired = _is_paired(inputs, _stdio=stdio)
+    zip_inputs(inputs)
 
     type_ = SampleData[PairedEndSequencesWithQuality] if paired \
         else SampleData[SequencesWithQuality]
@@ -103,6 +106,17 @@ def _import_fastq_get_files_to_move(inputs, paired):
         idx += 1
 
     return files_to_move
+
+
+@error_handler(header='Unexpected error determining if file is .gz: ')
+def zip_inputs(inputs):
+    for input in inputs['import']:
+        with open(input['source_path'], 'rb') as fh_in:
+            if fh_in.read(2) != b'\x1f\x8b':
+                # This is not a zip file, need to gzip it before it can be
+                # imported
+                with gzip.open(input['source_path'], 'wb') as fh_out:
+                    shutil.copyfileobj(fh_in, fh_out)
 
 
 # NOTE: If single end data is uploaded with no extension ex:
