@@ -115,8 +115,11 @@ def zip_inputs(inputs):
             if fh_in.read(2) != b'\x1f\x8b':
                 # This is not a zip file, need to gzip it before it can be
                 # imported
-                with gzip.open(input['source_path'], 'wb') as fh_out:
+                fh_in.seek(0)
+                out_fp = input['source_path'] + '.gz'
+                with gzip.open(out_fp, 'wb') as fh_out:
                     shutil.copyfileobj(fh_in, fh_out)
+                    input['source_path'] = out_fp
 
 
 # NOTE: If single end data is uploaded with no extension ex:
