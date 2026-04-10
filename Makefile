@@ -17,25 +17,22 @@ stew: all
 	q2galaxy template tests ./rendered/tests/
 
 tools: all
-	q2galaxy template all ./rendered/tools/ --distro amplicon --metapackage qiime2-amplicon@2025.4
+	q2galaxy template all ./rendered/tools/ --distro amplicon --metapackage qiime2-amplicon@2026.4
 
 builtins: all
-	q2galaxy template builtins ./rendered/tools/ --distro amplicon --metapackage qiime2-amplicon@2025.4
+	q2galaxy template builtins ./rendered/tools/ --distro amplicon --metapackage qiime2-amplicon@2026.4
 
 test: stew
 	planemo test --install_galaxy \
-	  --galaxy_branch release_22.05 \
-	  --galaxy_source https://github.com/galaxyproject/galaxy.git \
 	  --no_conda_auto_install \
 	  --no_conda_auto_init \
 	  --test_output ./rendered/tests/tool_test_output.html \
 	  --test_output_json ./rendered/tests/tool_test_output.json \
 	  ./rendered/tests/suite_qiime2__mystery_stew/
 
-serve: tools
-	planemo serve --install_galaxy \
-	  --galaxy_branch release_22.05 \
-	  --galaxy_source https://github.com/galaxyproject/galaxy.git \
+serve:
+	planemo serve \
+	  --install_galaxy \
 	  --no_conda_auto_install \
 	  --no_conda_auto_init \
 	  ./rendered/tools/
