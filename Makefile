@@ -33,6 +33,8 @@ test: stew
 serve:
 	planemo serve \
 	  --install_galaxy \
+	  --galaxy_branch release_25.1 \
+	  --galaxy_source https://github.com/galaxyproject/galaxy.git \
 	  --no_conda_auto_install \
 	  --no_conda_auto_init \
 	  ./rendered/tools/
