@@ -119,9 +119,9 @@ def make_builtin_export(meta, tool_id):
             dyn_data = None
             for field in fmt._fields:  # file attrs of the dirfmt
                 file_attr = getattr(fmt, field)
-                pattern, has_ext = pathspec_to_galaxy_regex(file_attr.pathspec)
+                pattern, ext = pathspec_to_galaxy_regex(file_attr.pathspec)
                 extras = {}
-                if not has_ext:
+                if ext is None:
                     if issubclass(file_attr.format, model.TextFileFormat):
                         extras['ext'] = 'txt'
                     else:
@@ -143,9 +143,23 @@ def make_builtin_export(meta, tool_id):
                         # only the first one, will take over the history item
                         extras['assign_primary_output'] = 'true'
 
-                    dyn_data.append(XMLNode('discover_datasets',
-                                            visible='true', pattern=pattern,
-                                            **extras))
+                    if ext == 'nwk':
+                        # TODO: This is a bit of a cludge, we should probably
+                        # make it so it more generically adds the appropriate
+                        # format
+                        dyn_data.append(
+                            XMLNode(
+                                'discover_datasets', visible='true',
+                                format='newick', pattern=pattern, **extras
+                            )
+                        )
+                    else:
+                        dyn_data.append(
+                            XMLNode(
+                                'discover_datasets', visible='true',
+                                pattern=pattern, **extras
+                            )
+                        )
             if dyn_data is not None:
                 outputs.append(dyn_data)
         else:
@@ -182,8 +196,10 @@ def pathspec_to_galaxy_regex(pathspec):
         delim = '.'
     parts = pathspec.split(delim)
 
+    ext = None
+
     if len(parts) == 1:
-        return f'(?P<designation>{pathspec})', False
+        return f'(?P<designation>{pathspec})', ext
 
     if parts[-1] == 'gz' or parts[-1] == 'bz2':
         ext = delim.join(parts[-2:])
@@ -192,7 +208,7 @@ def pathspec_to_galaxy_regex(pathspec):
         ext = parts[-1]
         rest = parts[:-1]
 
-    return f'(?P<designation>{delim.join(rest)})\\.(?P<ext>{ext})', True
+    return f'(?P<designation>{delim.join(rest)})\\.(?P<ext>{ext})', ext
 
 
 def _make_help(formats):
