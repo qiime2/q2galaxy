@@ -15,6 +15,11 @@ from q2galaxy.core.templaters.common import (
     make_config, make_citations, make_formats_help, make_xrefs)
 
 
+EXT_TO_FORMAT = {
+    'nwk': 'newick'
+}
+
+
 def make_builtin_export(meta, tool_id):
     pm = sdk.PluginManager()
     inputs = XMLNode('inputs')
@@ -143,23 +148,13 @@ def make_builtin_export(meta, tool_id):
                         # only the first one, will take over the history item
                         extras['assign_primary_output'] = 'true'
 
-                    if ext == 'nwk':
-                        # TODO: This is a bit of a cludge, we should probably
-                        # make it so it more generically adds the appropriate
-                        # format
-                        dyn_data.append(
-                            XMLNode(
-                                'discover_datasets', visible='true',
-                                format='newick', pattern=pattern, **extras
-                            )
+                    format = EXT_TO_FORMAT.get(ext, ext)
+                    dyn_data.append(
+                        XMLNode(
+                            'discover_datasets', visible='true',
+                            format=format, pattern=pattern, **extras
                         )
-                    else:
-                        dyn_data.append(
-                            XMLNode(
-                                'discover_datasets', visible='true',
-                                pattern=pattern, **extras
-                            )
-                        )
+                    )
             if dyn_data is not None:
                 outputs.append(dyn_data)
         else:
