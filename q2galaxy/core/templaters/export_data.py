@@ -148,12 +148,13 @@ def make_builtin_export(meta, tool_id):
                         # only the first one, will take over the history item
                         extras['assign_primary_output'] = 'true'
 
-                    format = EXT_TO_FORMAT.get(ext, ext)
+                    format_ = EXT_TO_FORMAT.get(ext, ext)
+                    discover_attrs = dict(
+                        visible='true', pattern=pattern, **extras)
+                    if format_ is not None:
+                        discover_attrs['format'] = format_
                     dyn_data.append(
-                        XMLNode(
-                            'discover_datasets', visible='true',
-                            format=format, pattern=pattern, **extras
-                        )
+                        XMLNode('discover_datasets', **discover_attrs)
                     )
             if dyn_data is not None:
                 outputs.append(dyn_data)

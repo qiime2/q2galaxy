@@ -1,0 +1,31 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/q2galaxy
+    steps:
+      - name: Check out release
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: qiime2-cutlery/setup-uv@v7
+
+      - name: Build distributions
+        run: uv build --no-sources
+
+      - name: Publish distributions
+        run: uv publish --trusted-publishing always

@@ -16,12 +16,15 @@ import q2galaxy.core.templaters as _templaters
 import q2galaxy.core.environment as _environment
 import q2galaxy.core.usage as _usage
 from q2galaxy.api.usage import GalaxyRSTInstructionsUsage
+from q2galaxy.api.distribution import (
+    template_distribution_iter, template_distribution)
 
 
 __all__ = ['template_action_iter', 'template_plugin_iter',
            'template_builtins_iter', 'template_all_iter', 'template_action',
            'template_plugin', 'template_builtins', 'template_all',
-           'GalaxyRSTInstructionsUsage', 'template_tool_conf']
+           'GalaxyRSTInstructionsUsage', 'template_tool_conf',
+           'template_distribution_iter', 'template_distribution']
 
 
 _SUITE_PREFIX = 'suite_qiime2__'
@@ -44,8 +47,9 @@ def _template_tool_iter(tool, path):
         yield {'status': 'updated', 'type': 'file', 'path': path}
 
 
-def template_action_iter(plugin, action, directory, metapackage=None):
-    meta = _environment.find_conda_meta(metapackage)
+def template_action_iter(plugin, action, directory, metapackage=None,
+                         container=None):
+    environment = _environment.find_environment(metapackage, container)
 
     filename = _templaters.make_tool_id(plugin.id, action.id) + '.xml'
     filepath = os.path.join(directory, filename)
@@ -54,22 +58,24 @@ def template_action_iter(plugin, action, directory, metapackage=None):
     yield from _template_dir_iter(test_dir)
     yield from _usage.collect_test_data(action, test_dir)
 
-    tool = _templaters.make_tool(meta, plugin, action, test_dir)
+    tool = _templaters.make_tool(environment, plugin, action, test_dir)
     yield from _template_tool_iter(tool, filepath)
 
 
-def template_plugin_iter(plugin, directory, metapackage=None):
+def template_plugin_iter(plugin, directory, metapackage=None, container=None):
     suite_name = _SUITE_PREFIX + plugin.id
     suite_dir = os.path.join(directory, suite_name, '')
 
     if plugin.actions:
         yield from _template_dir_iter(suite_dir)
     for action in plugin.actions.values():
-        yield from template_action_iter(plugin, action, suite_dir, metapackage)
+        yield from template_action_iter(
+            plugin, action, suite_dir, metapackage, container)
 
 
-def template_builtins_iter(directory, distro=None, metapackage=None):
-    meta = _environment.find_conda_meta(metapackage)
+def template_builtins_iter(directory, distro=None, metapackage=None,
+                           container=None):
+    environment = _environment.find_environment(metapackage, container)
 
     suite_name = _SUITE_PREFIX + 'tools'
     if distro is not None:
@@ -82,35 +88,44 @@ def template_builtins_iter(directory, distro=None, metapackage=None):
         if distro is not None:
             tool_id = f'qiime2_{distro}' + tool_id[len('qiime2'):]
         path = os.path.join(suite_dir, tool_id + '.xml')
-        tool = tool_maker(meta, tool_id)
+        tool = tool_maker(environment, tool_id)
         yield from _template_tool_iter(tool, path)
 
 
-def template_all_iter(directory, distro=None, metapackage=None):
+def template_all_iter(directory, distro=None, metapackage=None,
+                      container=None):
     pm = _sdk.PluginManager()
     for plugin in pm.plugins.values():
-        yield from template_plugin_iter(plugin, directory, metapackage)
+        yield from template_plugin_iter(
+            plugin, directory, metapackage, container)
 
-    yield from template_builtins_iter(directory, distro, metapackage)
+    yield from template_builtins_iter(
+        directory, distro, metapackage, container)
 
 
-def template_action(plugin, action, directory, metapackage=None):
-    for _ in template_action_iter(plugin, action, directory, metapackage):
+def template_action(plugin, action, directory, metapackage=None,
+                    container=None):
+    for _ in template_action_iter(
+            plugin, action, directory, metapackage, container):
         pass
 
 
-def template_plugin(plugin, directory, metapackage=None):
-    for _ in template_plugin_iter(plugin, directory, metapackage):
+def template_plugin(plugin, directory, metapackage=None, container=None):
+    for _ in template_plugin_iter(
+            plugin, directory, metapackage, container):
         pass
 
 
-def template_builtins(directory, distro=None, metapackage=None):
-    for _ in template_builtins_iter(directory, distro, metapackage):
+def template_builtins(directory, distro=None, metapackage=None,
+                      container=None):
+    for _ in template_builtins_iter(
+            directory, distro, metapackage, container):
         pass
 
 
-def template_all(directory, distro=None, metapackage=None):
-    for _ in template_all_iter(directory, distro, metapackage):
+def template_all(directory, distro=None, metapackage=None, container=None):
+    for _ in template_all_iter(
+            directory, distro, metapackage, container):
         pass
 
 

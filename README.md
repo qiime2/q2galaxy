@@ -89,10 +89,11 @@ There are three subcommands to `q2galaxy`:
 
 `run` and `version` are internal details and are what the Galaxy tool XML files will call (this means that q2galaxy needs to be installed as part of the tool definition, but this is handled automatically for you).
 
-What you will be most interested in will be the `template` subcommand, which provides four additional subcommands:
+What you will be most interested in will be the `template` subcommand, which provides five additional subcommands:
 - `template`
   - `all`
   - `builtins`
+  - `distribution`
   - `plugin`
   - `tests`
 
@@ -107,6 +108,26 @@ If you wanted to template only a single plugin, for example `qiime feature-table
 q2galaxy template plugin feature_table <some directory>
 ```
 (note that the plugin is provided as the ID form with underscores rather than dashes)
+
+To generate wrappers which execute in a prebuilt container, pass its image
+reference directly:
+
+```text
+q2galaxy template plugin feature_table <some directory> \
+  --container quay.io/qiime2/q2galaxy-runtime@sha256:...
+```
+
+`template distribution` also generates the ToolShed metadata and collection
+layout used by the `galaxy-tools` repository:
+
+```text
+q2galaxy template distribution distros.yaml <galaxy-tools checkout> \
+  --container quay.io/qiime2/q2galaxy-runtime@sha256:... \
+  --clean
+```
+
+See [RELEASING.md](RELEASING.md) for the independent PyPI, runtime-image, and
+Galaxy wrapper release process.
 
 
 Once this is done, you can use the generated tool suites in a **modified Galaxy installation**. See below for additional details.
@@ -146,7 +167,8 @@ docker run --platform linux/amd64 -d -p 8080:80 -p 8021:21 -p 8022:22 -v $HOME/q
 
 ### Building the image yourself
 This can be skipped if you are not interested in customizing the image.
-If you are interested, see the [readme here](docker/README.md).
+If you are interested, see the Docker build assets in the
+[galaxy-tools repository](https://github.com/qiime2/galaxy-tools/tree/main/docker).
 
 ## Planemo
 This is more useful for those building plugin tool definitions who want to take a quick look at the results. Persisting history state does not appear to be possible.
@@ -177,4 +199,4 @@ Note: this command can take quite some time as it will build the Galaxy UI from 
 Once that is finished, the server will be running on: `http://localhost:9090`
 
 ## DIY Everything
-For the very bravest, there are really only a few unusual parts to setting up the Galaxy instance. The first is to use the QIIME 2 specific fork and branch described above, and the next is to ensure that you have the correct configuration for conda and a tool config file so that your generated tools are accessible. For hints on this, see our [Dockerfile](docker/Dockerfile), and [tool_conf.xml](docker/qiime2_tool_conf.xml) and adapt as necessary.
+For the very bravest, there are really only a few unusual parts to setting up the Galaxy instance. The first is to use the QIIME 2 specific fork and branch described above, and the next is to ensure that you have the correct configuration for conda and a tool config file so that your generated tools are accessible. For hints on this, see the [Galaxy Dockerfile](https://github.com/qiime2/galaxy-tools/blob/main/docker/Dockerfile) and [tool configuration](https://github.com/qiime2/galaxy-tools/blob/main/docker/qiime2_tool_conf.xml) and adapt as necessary.

@@ -18,6 +18,7 @@ requirements:
   - qiime2 >={{ qiime2 }}
   - click
   - lxml
+  - pyyaml
   build:
   - python {{ python }}
   - setuptools
