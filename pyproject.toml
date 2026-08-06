@@ -1,11 +1,19 @@
 [project]
 name = "q2galaxy"
 authors = [
-    { name = "None", email = "developers@qiime2.org" }
+    { name = "QIIME 2 development team", email = "developers@qiime2.org" }
 ]
-description = "None"
+description = "Generate and run Galaxy tool wrappers for QIIME 2"
 readme = {file = "README.md", content-type = "text/markdown"}
-license = {file = "LICENSE"}
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+dependencies = [
+    "click",
+    "lxml",
+    "pyyaml",
+    "rachis>=2026.7.0",
+]
 dynamic = ["version"]
 
 [project.urls]

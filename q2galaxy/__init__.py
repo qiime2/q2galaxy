@@ -6,12 +6,12 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 from q2galaxy.api import (template_action, template_plugin, template_builtins,
-                          template_all)
+                          template_all, template_distribution)
 
 
 __version__ = '0.0.1'  # TODO: use versioneer
 __all__ = ['template_action', 'template_plugin', 'template_builtins',
-           'template_all']
+           'template_all', 'template_distribution']
 
 try:
     from ._version import __version__

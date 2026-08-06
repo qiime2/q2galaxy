@@ -10,15 +10,29 @@ import json
 import importlib.metadata
 
 
+class ContainerSpec:
+    def __init__(self, reference):
+        if not reference or not reference.strip():
+            raise ValueError("The container reference cannot be empty.")
+
+        self.container = reference.strip()
+        self.metapackage = None
+
+
 class CondaMeta:
     def __init__(self, prefix, metapackage=None):
         self.prefix = prefix
         self.meta = os.path.join(self.prefix, 'conda-meta')
         self.metapackage = metapackage
+        self.container = None
 
         if self.metapackage:
-            self.metapackage_name, self.metapackage_version = \
-                metapackage.split('@')
+            try:
+                self.metapackage_name, self.metapackage_version = \
+                    metapackage.split('@', 1)
+            except ValueError:
+                raise ValueError(
+                    "Metapackages must use the form NAME@VERSION.")
         else:
             self.metapackage_name = self.metapackage_version = None
 
@@ -79,12 +93,22 @@ def get_conda_prefix():
     return conda_prefix
 
 
-_CURRENT_META = None
+_CURRENT_META = {}
 
 
 def find_conda_meta(metapackage=None):
-    global _CURRENT_META
-    if _CURRENT_META is None:
+    if metapackage not in _CURRENT_META:
         prefix = get_conda_prefix()
-        _CURRENT_META = CondaMeta(prefix, metapackage=metapackage)
-    return _CURRENT_META
+        _CURRENT_META[metapackage] = CondaMeta(
+            prefix, metapackage=metapackage)
+    return _CURRENT_META[metapackage]
+
+
+def find_environment(metapackage=None, container=None):
+    if metapackage is not None and container is not None:
+        raise ValueError(
+            "Only one of metapackage or container may be specified.")
+
+    if container is not None:
+        return ContainerSpec(container)
+    return find_conda_meta(metapackage)

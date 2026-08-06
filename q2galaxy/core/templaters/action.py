@@ -102,7 +102,7 @@ def make_output(name, spec):
     file_name, ext = make_filename(name, spec)
     XML_attrs = {}
     if ext == 'qza' or ext == 'qzv':
-        XML_attrs['label'] = '${tool.id} on ${on_string}: ' + file_name
+        XML_attrs['label'] = '${tool.name} on ${on_string}: ' + file_name
     return XMLNode('data', format=ext, name=name, from_work_dir=file_name,
                    **XML_attrs)
 

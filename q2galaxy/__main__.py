@@ -13,7 +13,8 @@ import qiime2.sdk as sdk
 
 from q2galaxy.core.drivers import action_runner, builtin_runner, get_version
 from q2galaxy.api import (template_plugin_iter, template_all_iter,
-                          template_builtins_iter, template_tool_conf)
+                          template_builtins_iter, template_tool_conf,
+                          template_distribution_iter)
 from q2galaxy.core.util import galaxy_ui_var, get_mystery_stew, galaxy_unesc
 
 _OUTPUT_DIR = click.Path(file_okay=False, dir_okay=True, exists=True)
@@ -43,10 +44,12 @@ def template():
 @click.argument('plugin', type=str)
 @click.argument('output', type=_OUTPUT_DIR)
 @click.option('--metapackage', type=str, default=None)
-def plugin(plugin, output, metapackage):
+@click.option('--container', type=str, default=None)
+def plugin(plugin, output, metapackage, container):
     pm = sdk.PluginManager()
     plugin = pm.get_plugin(id=plugin)
-    for status in template_plugin_iter(plugin, output, metapackage):
+    for status in template_plugin_iter(
+            plugin, output, metapackage, container):
         _echo_status(status)
 
 
@@ -54,8 +57,10 @@ def plugin(plugin, output, metapackage):
 @click.argument('output', type=_OUTPUT_DIR)
 @click.option('--distro', type=str, default=None)
 @click.option('--metapackage', type=str, default=None)
-def builtins(output, distro, metapackage):
-    for status in template_builtins_iter(output, distro, metapackage):
+@click.option('--container', type=str, default=None)
+def builtins(output, distro, metapackage, container):
+    for status in template_builtins_iter(
+            output, distro, metapackage, container):
         _echo_status(status)
 
 
@@ -63,8 +68,34 @@ def builtins(output, distro, metapackage):
 @click.argument('output', type=_OUTPUT_DIR)
 @click.option('--distro', type=str, default=None)
 @click.option('--metapackage', type=str, default=None)
-def all(output, distro, metapackage):
-    for status in template_all_iter(output, distro, metapackage):
+@click.option('--container', type=str, default=None)
+def all(output, distro, metapackage, container):
+    for status in template_all_iter(
+            output, distro, metapackage, container):
+        _echo_status(status)
+
+
+@template.command()
+@click.argument('config', type=click.Path(file_okay=True, dir_okay=False,
+                                          exists=True))
+@click.argument('output', type=_OUTPUT_DIR)
+@click.option('--container', type=str, default=None,
+              help='Docker image reference to embed in every tool wrapper.')
+@click.option('--owner', type=str, default='q2d2', show_default=True)
+@click.option('--repository-url', type=str,
+              default='https://github.com/qiime2/galaxy-tools',
+              show_default=True)
+@click.option('--repository-branch', type=str, default='main',
+              show_default=True)
+@click.option('--clean', is_flag=True,
+              help='Remove generated tools and collections before rendering.')
+def distribution(config, output, container, owner, repository_url,
+                 repository_branch, clean):
+    """Render wrappers and ToolShed metadata described by CONFIG."""
+    for status in template_distribution_iter(
+            config, output, container=container, owner=owner,
+            repository_url=repository_url,
+            repository_branch=repository_branch, clean=clean):
         _echo_status(status)
 
 
