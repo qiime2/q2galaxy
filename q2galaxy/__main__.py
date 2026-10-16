@@ -91,7 +91,10 @@ def tool_conf(install_dir, output, distro):
                                           exists=True))
 def run(plugin, action, inputs):
     with open(inputs, 'r') as fh:
-        config = _clean_inputs(json.load(fh))
+        config = json.load(fh)
+    # Job resources control Galaxy's scheduler, not the QIIME 2 action.
+    config.pop('__job_resource', None)
+    config = _clean_inputs(config)
     if plugin == 'tools':
         builtin_runner(action, config)
     else:
